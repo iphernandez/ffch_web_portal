@@ -1,0 +1,18 @@
+<h1>Ayuda</h1>
+<p><a [href]="repositoryUrl" target="_blank" rel="noopener noreferrer">Repositorio del proyecto en GitHub</a></p>
+
+@if (loading()) {
+  <p>Cargando documentación...</p>
+} @else if (errorMessage()) {
+  <p role="alert">{{ errorMessage() }}</p>
+} @else {
+  <section class="help-document">
+    <h2>Web App</h2>
+    <article class="markdown-content" [innerHTML]="webAppReadme()"></article>
+  </section>
+
+  <section class="help-document">
+    <h2>FFCH Puntuación</h2>
+    <article class="markdown-content" [innerHTML]="ffchReadme()"></article>
+  </section>
+}

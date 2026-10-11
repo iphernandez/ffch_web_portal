@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/copy-readmes.mjs",
     "start": "ng serve",
+    "prebuild": "node scripts/copy-readmes.mjs",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
@@ -19,6 +21,7 @@
     "@angular/router": "^22.1.7",
     "dexie": "^4.4.6",
     "firebase": "^12.19.0",
+    "marked": "^18.1.0",
     "papaparse": "^5.7.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

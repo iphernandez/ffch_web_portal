@@ -1,0 +1,61 @@
+.help-document {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ffch-gray);
+}
+
+.markdown-content {
+  max-width: 78ch;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin-top: 1.6em;
+    line-height: 1.25;
+  }
+
+  p,
+  ul,
+  ol,
+  blockquote {
+    margin: 0.8em 0;
+  }
+
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--ffch-gray);
+    text-align: left;
+  }
+
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 0.8rem;
+    background: var(--ffch-gray-light);
+  }
+
+  code {
+    overflow-wrap: anywhere;
+  }
+
+  blockquote {
+    padding-left: 1rem;
+    border-left: 3px solid var(--ffch-blue);
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}

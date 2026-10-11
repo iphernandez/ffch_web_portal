@@ -23,6 +23,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/account.component').then((m) => m.AccountComponent)
   },
   {
+    path: 'ayuda',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/help/help.component').then((m) => m.HelpComponent)
+  },
+  {
     path: 'roster',
     canActivate: [authGuard],
     loadComponent: () => import('./features/roster/roster.component').then((m) => m.RosterComponent)
