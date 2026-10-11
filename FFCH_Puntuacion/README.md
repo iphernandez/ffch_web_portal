@@ -43,7 +43,7 @@ Verificadas contra la tabla de leyenda al final de `FFCH - Puntuacion - TDP.csv`
 - `TDP%` = suma ponderada de participación histórica por categoría/año: Año (2%), Pre temporada (1%),
   Galas (1%), Socios Fundadores (2%), Partido del Pavo (1%), Anfitrión Gala (1%), Team Building (1%,
   **peso independiente** del de Anfitrión Gala aunque el Excel original reusaba esa misma celda). Los
-  pesos son editables en la app (Roster → Pesos TDP).
+  pesos y participaciones por año se administran en la página TDP (solo administradores).
 
   > **"Socios Fundadores" es distinto a las demás categorías**: en el Excel original es una **única
   > columna** (no una por año, a diferencia de Año/Pre temporada/Galas/Partido del Pavo/Anfitrión
@@ -75,8 +75,8 @@ Verificadas contra la tabla de leyenda al final de `FFCH - Puntuacion - TDP.csv`
 
 ## Campos nuevos (no existían en el Excel)
 
-- `cupoExPat` (por jugador) — marcador de cupo de extranjero; hoy es solo informativo en la UI, sin
-  lógica especial de balanceo de equipos.
+- `cupoExPat` (por jugador/fecha) — indica si un jugador ExPat puede jugar esa fecha; se captura en
+  **Captura Semanal** y no modifica la fórmula de puntos.
 - `tarde` (por jugador/fecha) — booleano capturado semana a semana para automatizar las tarjetas
   amarilla/roja por tardanza (antes solo había contadores agregados por temporada en `config.json`).
 - `socioFundador` ya existía conceptualmente en el Excel (columna `AK` de TDP.csv), pero ahora es un

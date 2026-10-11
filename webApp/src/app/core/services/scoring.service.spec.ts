@@ -1,5 +1,6 @@
 import { ScoringService } from './scoring.service';
 import { WeeklyRecord } from '../models/weekly-record.model';
+import { DEFAULT_TDP_WEIGHTS, TdpHistoryEntry } from '../models/tdp.model';
 
 describe('ScoringService', () => {
   let service: ScoringService;
@@ -47,6 +48,19 @@ describe('ScoringService', () => {
     expect(service.computePuntos(0.5, 10, 7, true)).toBeCloseTo(25.5);
     // PtsTemporadaAnterior excluded when the season config says so.
     expect(service.computePuntos(0.5, 10, 7, false)).toBeCloseTo(15);
+  });
+
+  it('includes future-year participation in TDP and applies it to Puntos', () => {
+    const history: TdpHistoryEntry[] = [
+      { id: 'p1-anualidad-2027', playerId: 'p1', category: 'anualidad', year: 2027, participated: true },
+      { id: 'p1-anualidad-2028', playerId: 'p1', category: 'anualidad', year: 2028, participated: true },
+      { id: 'p1-gala-2028', playerId: 'p1', category: 'gala', year: 2028, participated: true },
+      { id: 'p1-anualidad-2029', playerId: 'p1', category: 'anualidad', year: 2029, participated: false }
+    ];
+    const tdp = service.computeTdp(history, DEFAULT_TDP_WEIGHTS, false);
+
+    expect(tdp).toBeCloseTo(0.05);
+    expect(service.computePuntos(tdp, 100, 0, false)).toBeCloseTo(105);
   });
 
   it('1st tardanza only gives Tarjeta Amarilla (no points penalty)', () => {

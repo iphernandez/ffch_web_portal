@@ -24,12 +24,17 @@ export const routes: Routes = [
   },
   {
     path: 'roster',
-    canActivate: [adminGuard],
+    canActivate: [authGuard],
     loadComponent: () => import('./features/roster/roster.component').then((m) => m.RosterComponent)
   },
   {
+    path: 'tdp',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/tdp/tdp.component').then((m) => m.TdpComponent)
+  },
+  {
     path: 'captura',
-    canActivate: [adminGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/weekly-capture/weekly-capture.component').then((m) => m.WeeklyCaptureComponent)
   },

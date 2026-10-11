@@ -10,7 +10,6 @@
         <th>Apodo</th>
         <th>WA Número</th>
         <th>Activo</th>
-        <th>Cupo ExPat</th>
         <th>Socio Fundador</th>
         <th>Sede temp. anterior</th>
         <th></th>
@@ -19,98 +18,28 @@
     <tbody>
       @for (player of players(); track player.id) {
         <tr>
-          <td><input type="number" [(ngModel)]="player.posicion" (change)="updatePlayer(player)" class="pos-input" /></td>
-          <td>
-            <button type="button" class="link" (click)="selectPlayer(player.id)">{{ player.galactico }}</button>
-          </td>
-          <td><input type="text" [(ngModel)]="player.bullying" (change)="updatePlayer(player)" /></td>
-          <td><input type="text" [(ngModel)]="player.wanumber" (change)="updatePlayer(player)" /></td>
-          <td><input type="checkbox" [(ngModel)]="player.activo" (change)="updatePlayer(player)" /></td>
-          <td><input type="checkbox" [(ngModel)]="player.cupoExPat" (change)="updatePlayer(player)" /></td>
-          <td><input type="checkbox" [(ngModel)]="player.socioFundador" (change)="updatePlayer(player)" /></td>
-          <td><input type="checkbox" [(ngModel)]="player.sedeTemporadaAnterior" (change)="updatePlayer(player)" /></td>
-          <td><button type="button" (click)="removePlayer(player)">Eliminar</button></td>
+          <td><input type="number" [(ngModel)]="player.posicion" (change)="updatePlayer(player)" class="pos-input" [disabled]="!isAdmin" /></td>
+          <td>{{ player.galactico }}</td>
+          <td><input type="text" [(ngModel)]="player.bullying" (change)="updatePlayer(player)" [disabled]="!isAdmin" /></td>
+          <td><input type="text" [(ngModel)]="player.wanumber" (change)="updatePlayer(player)" [disabled]="!isAdmin" /></td>
+          <td><input type="checkbox" [(ngModel)]="player.activo" (change)="updatePlayer(player)" [disabled]="!isAdmin" /></td>
+          <td><input type="checkbox" [(ngModel)]="player.socioFundador" (change)="updatePlayer(player)" [disabled]="!isAdmin" /></td>
+          <td><input type="checkbox" [(ngModel)]="player.sedeTemporadaAnterior" (change)="updatePlayer(player)" [disabled]="!isAdmin" /></td>
+          <td>@if (isAdmin) { <button type="button" (click)="removePlayer(player)">Eliminar</button> }</td>
         </tr>
       }
     </tbody>
   </table>
 
-  <h3>Agregar jugador</h3>
-  <form class="inline-form" (ngSubmit)="addPlayer()">
-    <input type="text" name="galactico" placeholder="Galáctico (nombre)" [(ngModel)]="newPlayer.galactico" required />
-    <input type="text" name="bullying" placeholder="Apodo" [(ngModel)]="newPlayer.bullying" />
-    <input type="text" name="wanumber" placeholder="WA número" [(ngModel)]="newPlayer.wanumber" />
-    <label><input type="checkbox" name="cupoExPat" [(ngModel)]="newPlayer.cupoExPat" /> Cupo ExPat</label>
-    <label><input type="checkbox" name="socioFundador" [(ngModel)]="newPlayer.socioFundador" /> Socio Fundador</label>
-    <label><input type="checkbox" name="sedeTemporadaAnterior" [(ngModel)]="newPlayer.sedeTemporadaAnterior" /> Sede temp. anterior</label>
-    <button type="submit">Agregar</button>
-  </form>
-</section>
-
-@if (selectedPlayerId(); as playerId) {
-  <section>
-    <h2>Historial TDP (por año) — {{ playerId }}</h2>
-    <p class="hint">"Socio Fundador" no aparece aquí: es un único valor por jugador, editable en la tabla de Jugadores arriba.</p>
-    <table class="roster-table">
-      <thead>
-        <tr>
-          <th>Categoría</th>
-          <th>Año</th>
-          <th>Participó</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (entry of selectedPlayerHistory(); track entry.id) {
-          <tr>
-            <td>{{ categoryLabel(entry.category) }}</td>
-            <td>{{ entry.year }}</td>
-            <td>{{ entry.participated ? 'Sí' : 'No' }}</td>
-            <td><button type="button" (click)="removeHistoryEntry(entry)">Eliminar</button></td>
-          </tr>
-        }
-      </tbody>
-    </table>
-
-    <form class="inline-form" (ngSubmit)="addHistoryEntry()">
-      <select name="category" [(ngModel)]="newHistoryEntry.category">
-        @for (option of historyCategoryOptions; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-      <input type="number" name="year" [(ngModel)]="newHistoryEntry.year" />
-      <label><input type="checkbox" name="participated" [(ngModel)]="newHistoryEntry.participated" /> Participó</label>
-      <button type="submit">Agregar / actualizar</button>
+  @if (isAdmin) {
+    <h3>Agregar jugador</h3>
+    <form class="inline-form" (ngSubmit)="addPlayer()">
+      <input type="text" name="galactico" placeholder="Galáctico (nombre)" [(ngModel)]="newPlayer.galactico" required />
+      <input type="text" name="bullying" placeholder="Apodo" [(ngModel)]="newPlayer.bullying" />
+      <input type="text" name="wanumber" placeholder="WA número" [(ngModel)]="newPlayer.wanumber" />
+      <label><input type="checkbox" name="socioFundador" [(ngModel)]="newPlayer.socioFundador" /> Socio Fundador</label>
+      <label><input type="checkbox" name="sedeTemporadaAnterior" [(ngModel)]="newPlayer.sedeTemporadaAnterior" /> Sede temp. anterior</label>
+      <button type="submit">Agregar</button>
     </form>
-  </section>
-}
-
-@if (seasonConfig(); as config) {
-  <section>
-    <h2>Pesos TDP (%)</h2>
-    <p class="hint">
-      "Team Building" es independiente de "Anfitrión Gala" (mismo valor por defecto, 1%), puedes ajustarlo aparte.
-    </p>
-    <div class="weights-grid">
-      @for (option of weightCategoryOptions; track option.value) {
-        <label>
-          {{ option.label }}
-          <input
-            type="number"
-            step="0.1"
-            [ngModel]="config.weights[option.value] * 100"
-            (ngModelChange)="config.weights[option.value] = $event / 100; saveWeights(config.weights)"
-          />%
-        </label>
-      }
-    </div>
-    <label class="hint">
-      <input
-        type="checkbox"
-        [ngModel]="config.ptsTemporadaAnteriorIncludedInSum"
-        (ngModelChange)="saveIncludePtsTemporadaAnterior($event)"
-      />
-      Incluir PtsTemporadaAnterior en la suma de Puntos
-    </label>
-  </section>
-}
+  }
+</section>

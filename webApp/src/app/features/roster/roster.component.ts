@@ -1,24 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DataStoreService } from '../../core/services/data-store.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Player } from '../../core/models/player.model';
-import { TdpCategory, TdpHistoryCategory, TdpHistoryEntry, TdpWeights } from '../../core/models/tdp.model';
-import { SeasonConfig } from '../../core/models/season-config.model';
-
-const WEIGHT_CATEGORY_OPTIONS: Array<{ value: TdpCategory; label: string }> = [
-  { value: 'anualidad', label: 'Año (Anualidad)' },
-  { value: 'pretemporada', label: 'Pre temporada' },
-  { value: 'gala', label: 'Gala' },
-  { value: 'socioFundador', label: 'Socio Fundador' },
-  { value: 'partidoPavo', label: 'Partido del Pavo' },
-  { value: 'anfitrionGala', label: 'Anfitrión Gala' },
-  { value: 'teamBuilding', label: 'Team Building' }
-];
-
-/** Historial TDP dropdown only offers per-year categories - Socio Fundador is a single Player flag instead. */
-const HISTORY_CATEGORY_OPTIONS: Array<{ value: TdpHistoryCategory; label: string }> = WEIGHT_CATEGORY_OPTIONS.filter(
-  (o): o is { value: TdpHistoryCategory; label: string } => o.value !== 'socioFundador'
-);
 
 function slugify(text: string): string {
   return (
@@ -39,39 +23,31 @@ function slugify(text: string): string {
   styleUrl: './roster.component.scss'
 })
 export class RosterComponent {
-  readonly weightCategoryOptions = WEIGHT_CATEGORY_OPTIONS;
-  readonly historyCategoryOptions = HISTORY_CATEGORY_OPTIONS;
   readonly players = signal<Player[]>([]);
-  readonly seasonConfig = signal<SeasonConfig | null>(null);
-  readonly selectedPlayerId = signal<string | null>(null);
-  readonly selectedPlayerHistory = signal<TdpHistoryEntry[]>([]);
 
   readonly newPlayer: Partial<Player> = {
     activo: true,
-    cupoExPat: false,
     sedeTemporadaAnterior: false,
     socioFundador: false
   };
-  readonly newHistoryEntry: { category: TdpHistoryCategory; year: number; participated: boolean } = {
-    category: 'anualidad',
-    year: new Date().getFullYear(),
-    participated: true
-  };
-
-  constructor(private readonly store: DataStoreService) {
+  constructor(
+    private readonly store: DataStoreService,
+    private readonly auth: AuthService
+  ) {
     void this.load();
   }
 
+  get isAdmin(): boolean {
+    return this.auth.currentUser()?.isAdmin ?? false;
+  }
+
   async load(): Promise<void> {
-    const [players, seasonConfig] = await Promise.all([
-      this.store.players.orderBy('posicion').toArray(),
-      this.store.getSeasonConfig()
-    ]);
+    const players = await this.store.players.orderBy('posicion').toArray();
     this.players.set(players);
-    this.seasonConfig.set(seasonConfig);
   }
 
   async addPlayer(): Promise<void> {
+    if (!this.isAdmin) return;
     const galactico = this.newPlayer.galactico?.trim();
     if (!galactico) return;
 
@@ -87,7 +63,6 @@ export class RosterComponent {
       wanumber: this.newPlayer.wanumber?.trim() ?? '',
       posicion: this.newPlayer.posicion ?? this.players().length + 1,
       activo: true,
-      cupoExPat: !!this.newPlayer.cupoExPat,
       sedeTemporadaAnterior: !!this.newPlayer.sedeTemporadaAnterior,
       socioFundador: !!this.newPlayer.socioFundador
     };
@@ -98,65 +73,21 @@ export class RosterComponent {
     this.newPlayer.wanombre = '';
     this.newPlayer.wanumber = '';
     this.newPlayer.posicion = undefined;
-    this.newPlayer.cupoExPat = false;
     this.newPlayer.sedeTemporadaAnterior = false;
     this.newPlayer.socioFundador = false;
     await this.load();
   }
 
   async updatePlayer(player: Player): Promise<void> {
+    if (!this.isAdmin) return;
     await this.store.players.put(player);
   }
 
   async removePlayer(player: Player): Promise<void> {
+    if (!this.isAdmin) return;
     await this.store.players.delete(player.id);
     await this.store.weeklyRecords.where('playerId').equals(player.id).delete();
     await this.store.tdpHistory.where('playerId').equals(player.id).delete();
-    if (this.selectedPlayerId() === player.id) this.selectedPlayerId.set(null);
     await this.load();
-  }
-
-  async saveWeights(weights: TdpWeights): Promise<void> {
-    const config = this.seasonConfig();
-    if (!config) return;
-    await this.store.saveSeasonConfig({ ...config, weights });
-    await this.load();
-  }
-
-  async saveIncludePtsTemporadaAnterior(included: boolean): Promise<void> {
-    const config = this.seasonConfig();
-    if (!config) return;
-    await this.store.saveSeasonConfig({ ...config, ptsTemporadaAnteriorIncludedInSum: included });
-    await this.load();
-  }
-
-  async selectPlayer(playerId: string): Promise<void> {
-    this.selectedPlayerId.set(playerId);
-    const history = await this.store.tdpHistory.where('playerId').equals(playerId).toArray();
-    this.selectedPlayerHistory.set(history.sort((a, b) => a.category.localeCompare(b.category) || a.year - b.year));
-  }
-
-  async addHistoryEntry(): Promise<void> {
-    const playerId = this.selectedPlayerId();
-    if (!playerId) return;
-
-    const entry: TdpHistoryEntry = {
-      id: `${playerId}-${this.newHistoryEntry.category}-${this.newHistoryEntry.year}`,
-      playerId,
-      category: this.newHistoryEntry.category,
-      year: this.newHistoryEntry.year,
-      participated: this.newHistoryEntry.participated
-    };
-    await this.store.tdpHistory.put(entry);
-    await this.selectPlayer(playerId);
-  }
-
-  async removeHistoryEntry(entry: TdpHistoryEntry): Promise<void> {
-    await this.store.tdpHistory.delete(entry.id);
-    await this.selectPlayer(entry.playerId);
-  }
-
-  categoryLabel(category: TdpHistoryCategory): string {
-    return this.historyCategoryOptions.find((c) => c.value === category)?.label ?? category;
   }
 }

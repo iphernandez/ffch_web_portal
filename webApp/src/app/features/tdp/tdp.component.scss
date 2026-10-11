@@ -1,0 +1,57 @@
+.tdp-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tdp-controls label,
+.weights-grid label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tdp-table-scroll {
+  overflow-x: auto;
+}
+
+.tdp-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--ffch-gray);
+  }
+
+  tbody tr:hover {
+    background: var(--ffch-blue-light);
+  }
+
+  th:not(:first-child),
+  td:not(:first-child) {
+    text-align: center;
+    white-space: nowrap;
+  }
+}
+
+.weights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.weights-grid input {
+  width: 5rem;
+}
+
+.hint {
+  color: #55606a;
+  font-size: 0.9rem;
+}

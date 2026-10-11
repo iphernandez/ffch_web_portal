@@ -14,4 +14,6 @@ export interface WeeklyRecord {
   pago: boolean | null;
   /** Arrived 5+ minutes late (drives Tarjeta Amarilla/Roja per reglamento.md). */
   tarde: boolean | null;
+  /** Whether an ExPat player is eligible to play in this specific fecha. */
+  cupoExPat?: boolean;
 }

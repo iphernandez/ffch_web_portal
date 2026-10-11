@@ -25,9 +25,8 @@ export interface TeamRestriction {
 }
 
 /**
- * Splits confirmed players into two balanced teams using a greedy "snake draft":
- * sort by rating desc, always assign the next player to whichever team currently
- * has the lower total. Mirrors the two-team/PROM format seen in convocados.md.
+ * Splits confirmed players into two equal-sized teams (or differing by one for odd counts),
+ * using rating totals to choose between available slots and honoring compatible restrictions.
  * Callers can freely move players between the resulting teams afterwards (manual override).
  */
 @Injectable({ providedIn: 'root' })
@@ -73,6 +72,8 @@ export class TeamBalancerService {
 
   balance(players: BalancerPlayer[], restrictions: TeamRestriction[] = []): BalancedTeams {
     const sorted = [...players].sort((a, b) => b.rating - a.rating);
+    const capacityA = Math.ceil(sorted.length / 2);
+    const capacityB = Math.floor(sorted.length / 2);
 
     const teamAPlayers: BalancerPlayer[] = [];
     const teamBPlayers: BalancerPlayer[] = [];
@@ -80,37 +81,31 @@ export class TeamBalancerService {
     let totalB = 0;
 
     for (const player of sorted) {
-      const preferredTeam = totalA <= totalB ? 'teamA' : 'teamB';
-      const target = preferredTeam === 'teamA' ? teamAPlayers : teamBPlayers;
-      const alternative = preferredTeam === 'teamA' ? teamBPlayers : teamAPlayers;
+      const hasRoomA = teamAPlayers.length < capacityA;
+      const hasRoomB = teamBPlayers.length < capacityB;
+      const canUseA = hasRoomA && this.canAddPlayerToTeam(player.playerId, teamAPlayers, restrictions);
+      const canUseB = hasRoomB && this.canAddPlayerToTeam(player.playerId, teamBPlayers, restrictions);
 
-      const canUsePreferred = this.canAddPlayerToTeam(player.playerId, target, restrictions);
-      const canUseAlternative = this.canAddPlayerToTeam(player.playerId, alternative, restrictions);
-
-      if (canUsePreferred) {
-        if (preferredTeam === 'teamA') {
-          teamAPlayers.push(player);
-          totalA += player.rating;
-        } else {
-          teamBPlayers.push(player);
-          totalB += player.rating;
-        }
-      } else if (canUseAlternative) {
-        if (preferredTeam === 'teamA') {
-          teamBPlayers.push(player);
-          totalB += player.rating;
-        } else {
-          teamAPlayers.push(player);
-          totalA += player.rating;
-        }
+      let team: 'teamA' | 'teamB';
+      if (canUseA && canUseB) {
+        team = totalA <= totalB ? 'teamA' : 'teamB';
+      } else if (canUseA) {
+        team = 'teamA';
+      } else if (canUseB) {
+        team = 'teamB';
+      } else if (hasRoomA && hasRoomB) {
+        // Restrictions may be mutually incompatible; preserve the required team sizes.
+        team = totalA <= totalB ? 'teamA' : 'teamB';
       } else {
-        if (preferredTeam === 'teamA') {
-          teamAPlayers.push(player);
-          totalA += player.rating;
-        } else {
-          teamBPlayers.push(player);
-          totalB += player.rating;
-        }
+        team = hasRoomA ? 'teamA' : 'teamB';
+      }
+
+      if (team === 'teamA') {
+        teamAPlayers.push(player);
+        totalA += player.rating;
+      } else {
+        teamBPlayers.push(player);
+        totalB += player.rating;
       }
     }
 

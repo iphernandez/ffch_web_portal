@@ -189,7 +189,6 @@ export class CsvImportService {
         wanumber: row[staticIndex['wanumber']]?.trim() ?? '',
         posicion: posicionRaw ? Number(posicionRaw) : players.length + 1,
         activo: true,
-        cupoExPat: false,
         sedeTemporadaAnterior: toBoolean(row[staticIndex['SedeTemporadaAnterior']]),
         socioFundador: false
       });

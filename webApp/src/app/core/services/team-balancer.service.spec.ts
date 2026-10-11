@@ -44,6 +44,21 @@ describe('TeamBalancerService', () => {
     expect(Math.abs(teamA.total - teamB.total)).toBeLessThanOrEqual(3);
   });
 
+  it.each([12, 13])('keeps team sizes equal or one apart for %i players', (count) => {
+    const ratings = [10, 2, 9, 1, 8, 3, 7, 4, 6, 5, 10, 1, 9];
+    const players: BalancerPlayer[] = Array.from({ length: count }, (_, index) => ({
+      playerId: `p${index}`,
+      nombre: `Player ${index}`,
+      puntos: ratings[index % ratings.length],
+      rating: ratings[index % ratings.length]
+    }));
+
+    const { teamA, teamB } = service.balance(players);
+
+    expect(teamA.players.length).toBe(Math.ceil(count / 2));
+    expect(teamB.players.length).toBe(Math.floor(count / 2));
+  });
+
   it('keeps restricted players on different teams', () => {
     const players: BalancerPlayer[] = [
       { playerId: 'p1', nombre: 'Jose', puntos: 9, rating: 9 },

@@ -12,11 +12,13 @@
       }
     </select>
   </label>
-  <label>
-    Nueva fecha:
-    <input type="date" [ngModel]="selectedFecha()" (ngModelChange)="createFecha($event)" />
-  </label>
-  <button type="button" (click)="deleteFecha()">Eliminar captura completa</button>
+  @if (isAdmin) {
+    <label>
+      Nueva fecha:
+      <input type="date" [ngModel]="selectedFecha()" (ngModelChange)="createFecha($event)" />
+    </label>
+    <button type="button" (click)="deleteFecha()">Eliminar captura completa</button>
+  }
 </div>
 
 <table class="capture-table">
@@ -28,6 +30,7 @@
       <th>Sede</th>
       <th>Pago</th>
       <th>Tarde</th>
+      <th>Cupo ExPat</th>
       <th></th>
     </tr>
   </thead>
@@ -35,12 +38,23 @@
     @for (row of rows(); track row.player.id) {
       <tr>
         <td>{{ row.player.galactico }}</td>
-        <td><input type="checkbox" [(ngModel)]="row.record.rsvp" (change)="saveRow(row)" /></td>
-        <td><input type="checkbox" [(ngModel)]="row.record.jugo" (change)="saveRow(row)" /></td>
-        <td><input type="checkbox" [(ngModel)]="row.record.sede" (change)="saveRow(row)" /></td>
-        <td><input type="checkbox" [(ngModel)]="row.record.pago" (change)="saveRow(row)" /></td>
-        <td><input type="checkbox" [(ngModel)]="row.record.tarde" (change)="saveRow(row)" /></td>
-        <td><button type="button" (click)="deleteRow(row)">Eliminar</button></td>
+        <td><input type="checkbox" [(ngModel)]="row.record.rsvp" (change)="saveRow(row)" [disabled]="!isAdmin" /></td>
+        <td><input type="checkbox" [(ngModel)]="row.record.jugo" (change)="saveRow(row)" [disabled]="!isAdmin" /></td>
+        <td><input type="checkbox" [(ngModel)]="row.record.sede" (change)="saveRow(row)" [disabled]="!isAdmin" /></td>
+        <td><input type="checkbox" [(ngModel)]="row.record.pago" (change)="saveRow(row)" [disabled]="!isAdmin" /></td>
+        <td><input type="checkbox" [(ngModel)]="row.record.tarde" (change)="saveRow(row)" [disabled]="!isAdmin" /></td>
+        <td>
+          <input
+            type="checkbox"
+            [attr.aria-label]="'Cupo ExPat: ' + row.player.galactico"
+            [ngModel]="row.record.cupoExPat ?? false"
+            (ngModelChange)="row.record.cupoExPat = $event; saveRow(row)"
+            [disabled]="!isAdmin"
+          />
+        </td>
+        @if (isAdmin) {
+          <td><button type="button" (click)="deleteRow(row)">Eliminar</button></td>
+        }
       </tr>
     }
   </tbody>

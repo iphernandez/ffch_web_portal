@@ -1,0 +1,66 @@
+<h1>TDP</h1>
+
+<section>
+  <h2>Participación por categoría y año</h2>
+  <div class="tdp-controls">
+    <label>
+      Año
+          <input type="number" min="1900" [ngModel]="year" (ngModelChange)="setYear($event)" />
+    </label>
+  </div>
+
+  <div class="tdp-table-scroll">
+    <table class="tdp-table">
+      <thead>
+        <tr>
+          <th>Galáctico</th>
+          @for (option of categories; track option.value) {
+            <th>{{ option.label }}</th>
+          }
+          <th>TDP</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (player of players(); track player.id) {
+          <tr>
+            <td>{{ player.galactico }}</td>
+            @for (option of categories; track option.value) {
+              <td>
+                <input
+                  type="checkbox"
+                  [attr.aria-label]="option.label + ': ' + player.galactico"
+                  [ngModel]="yearParticipation()[player.id]?.[option.value] ?? false"
+                  (ngModelChange)="saveParticipation(player, option.value, $event)"
+                  [disabled]="!isAdmin"
+                />
+              </td>
+            }
+            <td>{{ tdpFor(player.id) | percent: '1.0-0' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+@if (seasonConfig(); as config) {
+  <section>
+    <h2>Pesos TDP (%)</h2>
+    <p class="hint">Cada categoría suma sus años con participación multiplicados por su peso. Socio Fundador se suma una sola vez por jugador.</p>
+    <div class="weights-grid">
+      @for (option of weightCategories; track option.value) {
+        <label>
+          {{ option.label }}
+          <input
+            type="number"
+            min="0"
+            step="0.1"
+            [ngModel]="config.weights[option.value] * 100"
+            (ngModelChange)="saveWeight(option.value, $event)"
+            [disabled]="!isAdmin"
+          />%
+        </label>
+      }
+    </div>
+  </section>
+}

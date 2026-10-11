@@ -49,10 +49,11 @@ tomadas para los casos ambiguos (PtsTemporadaAnterior, peso de Team Building, ta
 
 1. Entra a **Ajustes** y, si es la primera vez, usa "Importar desde los CSV originales" para poblar el
    roster y el historial desde los archivos en `FFCH_Puntuacion/`.
-2. Usa **Captura Semanal** cada fecha para marcar RSVP/Jugó/Sede/Pago/Tarde por jugador.
-3. Usa **Equipos** para armar los 2 equipos balanceados y **Convocatoria** para generar el texto a copiar
+2. Usa **TDP** para registrar, por categoría y año, las participaciones y ajustar los pesos de la fórmula.
+3. Usa **Captura Semanal** cada fecha para marcar RSVP/Jugó/Sede/Pago/Tarde por jugador.
+4. Usa **Equipos** para armar los 2 equipos balanceados y **Convocatoria** para generar el texto a copiar
    a WhatsApp.
-4. Cuando termines de editar, usa "⬆ Guardar cambios en Firestore" en **Ajustes** para que los demás
+5. Cuando termines de editar, usa "⬆ Guardar cambios en Firestore" en **Ajustes** para que los demás
    dispositivos puedan sincronizar los cambios.
 
 ## Matriz de roles
@@ -61,13 +62,13 @@ La app distingue dos tipos de acceso:
 
 | Rol | Acceso | Puede editar datos |
 |---|---|---:|
-| Usuario autenticado no admin | Dashboard y Cuenta | No |
-| Administrador | Todo el resto (Roster, Captura Semanal, Equipos, Convocatoria, Ajustes, Usuarios) | Sí |
+| Usuario autenticado no admin | Dashboard, Roster, TDP, Captura Semanal y Cuenta | No |
+| Administrador | Todas las páginas | Sí |
 
 Enrutamiento real:
 
-- `authGuard` protege las pantallas básicas: `/` y `/cuenta`.
-- `adminGuard` protege `/roster`, `/captura`, `/equipos`, `/convocatoria`, `/ajustes` y `/usuarios`.
+- `authGuard` protege `/`, `/cuenta`, `/roster`, `/tdp` y `/captura`.
+- `adminGuard` protege `/equipos`, `/convocatoria`, `/ajustes` y `/usuarios`.
 - La lectura del documento compartido (`data/ffch-puntuacion`) está permitida a cualquier usuario autenticado
   (regla de Firestore); solo administradores pueden escribirlo.
 
