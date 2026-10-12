@@ -62,13 +62,13 @@ La app distingue dos tipos de acceso:
 
 | Rol | Acceso | Puede editar datos |
 |---|---|---:|
-| Usuario autenticado no admin | Dashboard, Roster, TDP, Captura Semanal y Cuenta | No |
+| Usuario autenticado no admin | Dashboard, Roster, TDP, Captura Semanal, Equipos, Ayuda y Cuenta | No |
 | Administrador | Todas las páginas | Sí |
 
 Enrutamiento real:
 
-- `authGuard` protege `/`, `/cuenta`, `/roster`, `/tdp` y `/captura`.
-- `adminGuard` protege `/equipos`, `/convocatoria`, `/ajustes` y `/usuarios`.
+- `authGuard` protege `/`, `/cuenta`, `/roster`, `/tdp`, `/captura`, `/equipos` y `/ayuda`.
+- `adminGuard` protege `/convocatoria`, `/ajustes` y `/usuarios`.
 - La lectura del documento compartido (`data/ffch-puntuacion`) está permitida a cualquier usuario autenticado
   (regla de Firestore); solo administradores pueden escribirlo.
 

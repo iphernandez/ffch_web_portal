@@ -6,20 +6,22 @@
   @for (candidate of candidates(); track candidate.playerId) {
     <li>
       <label>
-        <input type="checkbox" [(ngModel)]="candidate.selected" />
+        <input type="checkbox" [(ngModel)]="candidate.selected" [disabled]="!isAdmin" />
         {{ candidate.nombre }} (Rating {{ candidate.rating.toFixed(0) }})
       </label>
     </li>
   }
 </ul>
 
-<button type="button" (click)="buildTeams()">Armar equipos</button>
+@if (isAdmin) {
+  <button type="button" (click)="buildTeams()">Armar equipos</button>
+}
 
 @if (lastWinner() !== null) {
   <p>Último ganador: {{ lastWinner() === 'teamA' ? 'Equipo A' : 'Equipo B' }}</p>
 }
 
-@if (teams()) {
+@if (teams() && isAdmin) {
   <p>Equipos armados pendientes de resultado. Marca el ganador después del partido para actualizar los ratings.</p>
   <button type="button" (click)="applyLastGameResult('teamA')">🟧 Equipo A ganó</button>
   <button type="button" (click)="applyLastGameResult('teamB')">🔵 Equipo B ganó</button>
@@ -27,6 +29,7 @@
 
 <h2>Restricciones de equipo</h2>
 <p>Se usa el ID interno del jugador para la regla. El WA number es solo una etiqueta visible.</p>
+@if (isAdmin) {
 <div>
   <label>
     Jugador A:
@@ -50,6 +53,7 @@
 
   <button type="button" (click)="addRestriction()">Guardar restricción</button>
 </div>
+}
 
 @if (restrictions().length > 0) {
   <ul>
@@ -62,7 +66,9 @@
         {{
           candidates().find((candidate) => candidate.playerId === restriction.playerBId)?.nombre ?? 'Jugador'
         }}
-        <button type="button" (click)="deleteRestriction(restriction.id)">Eliminar</button>
+        @if (isAdmin) {
+          <button type="button" (click)="deleteRestriction(restriction.id)">Eliminar</button>
+        }
       </li>
     }
   </ul>

@@ -45,7 +45,7 @@ export const routes: Routes = [
   },
   {
     path: 'equipos',
-    canActivate: [adminGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/team-balancer/team-balancer.component').then((m) => m.TeamBalancerComponent)
   },

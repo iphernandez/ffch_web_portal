@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Player } from '../../core/models/player.model';
+import { AuthService } from '../../core/services/auth.service';
 import { DataStoreService } from '../../core/services/data-store.service';
 import { ScoringService } from '../../core/services/scoring.service';
 import { TeamBalancerService, BalancedTeams, BalancerPlayer, TeamRestriction } from '../../core/services/team-balancer.service';
@@ -39,9 +40,14 @@ export class TeamBalancerComponent {
   constructor(
     private readonly store: DataStoreService,
     private readonly scoring: ScoringService,
-    private readonly balancer: TeamBalancerService
+    private readonly balancer: TeamBalancerService,
+    private readonly auth: AuthService
   ) {
     void this.load();
+  }
+
+  get isAdmin(): boolean {
+    return this.auth.currentUser()?.isAdmin ?? false;
   }
 
   async load(): Promise<void> {
@@ -113,6 +119,7 @@ export class TeamBalancerComponent {
   }
 
   async buildTeams(): Promise<void> {
+    if (!this.isAdmin) return;
     if (this.teams() && !confirm('Ya hay equipos armados sin resultado. ¿Reemplazarlos?')) {
       return;
     }
@@ -124,6 +131,7 @@ export class TeamBalancerComponent {
   }
 
   async addRestriction(): Promise<void> {
+    if (!this.isAdmin) return;
     const playerAId = this.restrictionAId().trim();
     const playerBId = this.restrictionBId().trim();
 
@@ -149,12 +157,14 @@ export class TeamBalancerComponent {
   }
 
   async deleteRestriction(restrictionId: string): Promise<void> {
+    if (!this.isAdmin) return;
     const next = this.restrictions().filter((restriction) => restriction.id !== restrictionId);
     this.restrictions.set(next);
     await this.store.setSetting('team-balancer:restrictions', JSON.stringify(next));
   }
 
   async applyLastGameResult(winner: 'teamA' | 'teamB'): Promise<void> {
+    if (!this.isAdmin) return;
     const currentTeams = this.teams();
     if (!currentTeams) return;
 
