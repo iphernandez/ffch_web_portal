@@ -1,3 +1,26 @@
+@if (announcements().length > 0) {
+  <section class="announcements" [class.collapsed]="announcementsCollapsed()">
+    <button
+      type="button"
+      class="announcements-header"
+      (click)="toggleAnnouncements()"
+      [attr.aria-expanded]="!announcementsCollapsed()"
+      aria-controls="announcements-body"
+    >
+      <span class="announcements-title">📣 Anuncios <span class="badge">{{ announcements().length }}</span></span>
+      <span class="toggle-label">{{ announcementsCollapsed() ? 'Mostrar ▼' : 'Minimizar ▲' }}</span>
+    </button>
+
+    @if (!announcementsCollapsed()) {
+      <div id="announcements-body" class="announcements-body">
+        @for (html of announcements(); track $index) {
+          <article class="announcement" [innerHTML]="html"></article>
+        }
+      </div>
+    }
+  </section>
+}
+
 <section class="hero">
   <img src="images/escudo.png" alt="Escudo oficial FFCH" class="hero-crest" />
   <div class="hero-text">

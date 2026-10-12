@@ -37,6 +37,120 @@
   }
 }
 
+.announcements {
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 50%, #c9a227 100%);
+  box-shadow: 0 6px 18px rgba(26, 35, 126, 0.35);
+  color: white;
+  border: 2px solid #ffd54f;
+  animation: announcements-glow 2.5s ease-in-out infinite alternate;
+
+  &.collapsed {
+    animation: none;
+  }
+
+  .announcements-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(0, 0, 0, 0.25);
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  .announcements-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  .badge {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    background: #ffd54f;
+    color: #1a237e;
+    font-size: 0.85rem;
+  }
+
+  .toggle-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    white-space: nowrap;
+  }
+
+  .announcements-body {
+    padding: 1rem 1.25rem 1.25rem;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .announcement {
+    background: rgba(255, 255, 255, 0.12);
+    border-left: 5px solid #ffd54f;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+
+    // Content comes from [innerHTML], which doesn't receive scoped style attributes.
+    ::ng-deep {
+      :is(h1, h2, h3) {
+        margin: 0.4rem 0 0.6rem;
+        font-size: 1.75rem;
+        color: #ffd54f;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      }
+
+      p {
+        margin: 0 0 0.75rem;
+      }
+
+      a {
+        color: #ffd54f;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem 1.25rem;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+@keyframes announcements-glow {
+  from {
+    box-shadow: 0 6px 18px rgba(26, 35, 126, 0.35);
+  }
+  to {
+    box-shadow: 0 6px 24px rgba(255, 213, 79, 0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcements {
+    animation: none;
+  }
+}
+
 .standings {
   width: 100%;
   border-collapse: collapse;

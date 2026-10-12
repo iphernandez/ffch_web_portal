@@ -1,5 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { marked } from 'marked';
 import { DataStoreService } from '../../core/services/data-store.service';
 import { ScoringService, PlayerScoreSummary } from '../../core/services/scoring.service';
 import { TeamBalancerService } from '../../core/services/team-balancer.service';
@@ -13,6 +14,9 @@ interface StandingRow {
   rating: number;
 }
 
+const ANNOUNCEMENTS_PATH = 'anuncios.md';
+const ANNOUNCEMENTS_COLLAPSED_KEY = 'ffch.announcements.collapsed';
+
 @Component({
   selector: 'app-dashboard',
   imports: [RouterLink],
@@ -24,12 +28,38 @@ export class DashboardComponent {
   readonly rows = signal<StandingRow[]>([]);
   readonly sortedRows = computed(() => [...this.rows()].sort((a, b) => b.summary.puntos - a.summary.puntos));
 
+  readonly announcements = signal<string[]>([]);
+  readonly announcementsCollapsed = signal(localStorage.getItem(ANNOUNCEMENTS_COLLAPSED_KEY) === 'true');
+
+  toggleAnnouncements(): void {
+    const next = !this.announcementsCollapsed();
+    this.announcementsCollapsed.set(next);
+    localStorage.setItem(ANNOUNCEMENTS_COLLAPSED_KEY, String(next));
+  }
+
   constructor(
     private readonly store: DataStoreService,
     private readonly scoring: ScoringService,
     private readonly balancer: TeamBalancerService
   ) {
     void this.load();
+    void this.loadAnnouncements();
+  }
+
+  private async loadAnnouncements(): Promise<void> {
+    try {
+      const response = await fetch(new URL(ANNOUNCEMENTS_PATH, document.baseURI));
+      if (!response.ok) return;
+      const markdown = (await response.text()).replace(/<!--[\s\S]*?-->/g, '');
+      const items = markdown
+        .split(/^\s*---\s*$/m)
+        .map((block) => block.trim())
+        .filter((block) => block.length > 0)
+        .map((block) => marked.parse(block, { async: false }));
+      this.announcements.set(items);
+    } catch {
+      // Announcements are optional; ignore load failures.
+    }
   }
 
   async load(): Promise<void> {
