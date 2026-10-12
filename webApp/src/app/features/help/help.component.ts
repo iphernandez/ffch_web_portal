@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { marked } from 'marked';
 
-const GITHUB_REPOSITORY_URL = 'https://github.com/iphernandez/sendMessageOnWhatsApp';
+const GITHUB_REPOSITORY_URL = 'https://github.com/iphernandez/ffch_web_portal';
 
 @Component({
   selector: 'app-help',

@@ -1,4 +1,4 @@
-# sendMessageOnWhatsApp
+# ffch_web_portal
 Sends message to a contact or group on WhatsApp
 
 ## FFCH Puntuación (Angular web app)
@@ -7,7 +7,7 @@ Sends message to a contact or group on WhatsApp
 attendance/payment capture, points/TDP calculation, team balancing, and convocatoria text generation.
 It runs entirely client-side (IndexedDB, no server) and is published free on GitHub Pages:
 
-- Live app: `https://iphernandez.github.io/sendMessageOnWhatsApp/` (once deployed, see [webApp/DEPLOY.md](webApp/DEPLOY.md))
+- Live app: `https://iphernandez.github.io/ffch_web_portal/` (once deployed, see [webApp/DEPLOY.md](webApp/DEPLOY.md))
 - Local dev / docs: [webApp/README.md](webApp/README.md)
 - Data/formula migration notes: [FFCH_Puntuacion/README.md](FFCH_Puntuacion/README.md)
 
@@ -25,7 +25,7 @@ For automated poll-vote lookups, you can also override the poll question from th
 node webJsApp/index.js --auto --type poll-votes --poll-question "Quienes juegan hoy?"
 ```
 
-The help content is stored in [webJsApp/CLI_HELP.md](c:/Development/GitHub/sendMessageOnWhatsApp/webJsApp/CLI_HELP.md) so CLI instructions can be updated without changing code.
+The help content is stored in [webJsApp/CLI_HELP.md](webJsApp/CLI_HELP.md) so CLI instructions can be updated without changing code.
 
 ## Config profiles
 

@@ -13,5 +13,5 @@ export const environment = {
     appId: '1:550652817905:web:8490e945b9f1535365d450'
   },
   // Continue URL Firebase redirects to after a password-reset email link; must match the deployed app.
-  passwordResetContinueUrl: 'https://iphernandez.github.io/sendMessageOnWhatsApp/#/restablecer-contrasena'
+  passwordResetContinueUrl: 'https://iphernandez.github.io/ffch_web_portal/#/restablecer-contrasena'
 };

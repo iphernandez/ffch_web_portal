@@ -48,16 +48,16 @@ Con esto, al abrir la app por primera vez se crea automáticamente la cuenta adm
 - Con el origen configurado, simplemente haz `push` a `main` (o dispara manualmente el workflow
   `Deploy webApp to GitHub Pages` desde la pestaña **Actions → Run workflow**).
 - El workflow [`../.github/workflows/deploy-webapp.yml`](../.github/workflows/deploy-webapp.yml) compila
-  `webApp` con `--base-href=/sendMessageOnWhatsApp/` y publica `dist/webApp/browser`.
+  `webApp` con `--base-href=/ffch_web_portal/` y publica `dist/webApp/browser`.
 - Al terminar, la app queda disponible en:
 
   ```
-  https://iphernandez.github.io/sendMessageOnWhatsApp/
+  https://iphernandez.github.io/ffch_web_portal/
   ```
 
 ## 3. Verificación
 
-1. Abre `https://iphernandez.github.io/sendMessageOnWhatsApp/` y confirma que el Dashboard carga.
+1. Abre `https://iphernandez.github.io/ffch_web_portal/` y confirma que el Dashboard carga.
 2. Navega a otra pantalla (ej. `#/roster`) y **refresca la página** — debe seguir funcionando gracias al
    ruteo por hash (`withHashLocation()`), sin dar 404.
 3. Inicia sesión como administrador y en **Ajustes** prueba "⬇ Sincronizar desde Firestore" y luego

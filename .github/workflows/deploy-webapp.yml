@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --registry=https://registry.npmjs.org
 
-      - run: npm run build -- --base-href=/sendMessageOnWhatsApp/
+      - run: npm run build -- --base-href=/ffch_web_portal/
 
       - uses: actions/upload-pages-artifact@v3
         with:
