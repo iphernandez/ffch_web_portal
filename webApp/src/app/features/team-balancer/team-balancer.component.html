@@ -100,6 +100,15 @@
   <pre class="preview">{{ copyText() }}</pre>
 }
 
+@if (substitutes().length > 0) {
+  <h2>🪑 Suplentes</h2>
+  <ul>
+    @for (p of substitutes(); track p.playerId) {
+      <li>{{ p.nombre }}</li>
+    }
+  </ul>
+}
+
 @if (pastTeams().length > 0) {
   <h2>Equipos anteriores</h2>
   <ul>

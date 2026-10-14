@@ -7,9 +7,12 @@ import { ScoringService } from '../../core/services/scoring.service';
 import { TeamBalancerService, BalancedTeams, BalancerPlayer, TeamRestriction } from '../../core/services/team-balancer.service';
 
 const PENDING_TEAMS_KEY = 'team-balancer:pendingTeams';
+/** Max players that take the field; change this value to adjust the cap. */
+const MAX_PLAYERS_PER_GAME = 12;
 
 interface Candidate extends BalancerPlayer {
   selected: boolean;
+  tdp: number;
 }
 
 interface TeamHistoryEntry {
@@ -17,6 +20,10 @@ interface TeamHistoryEntry {
   winner: 'teamA' | 'teamB';
   teamA: string[];
   teamB: string[];
+}
+
+interface StoredPendingTeams extends BalancedTeams {
+  substitutes?: BalancerPlayer[];
 }
 
 @Component({
@@ -28,6 +35,8 @@ interface TeamHistoryEntry {
 export class TeamBalancerComponent {
   readonly candidates = signal<Candidate[]>([]);
   readonly teams = signal<BalancedTeams | null>(null);
+  readonly substitutes = signal<BalancerPlayer[]>([]);
+  readonly maxPlayers = MAX_PLAYERS_PER_GAME;
   readonly copyText = signal('');
   readonly pastTeams = signal<TeamHistoryEntry[]>([]);
   readonly lastWinner = signal<'teamA' | 'teamB' | null>(null);
@@ -95,19 +104,24 @@ export class TeamBalancerComponent {
         playerId: player.id,
         nombre: player.galactico,
         puntos: summary.puntos,
+        tdp: summary.tdp,
         rating,
         selected: false
       };
     });
 
-    const pending = storedPending ? (JSON.parse(storedPending) as BalancedTeams) : null;
+    const pending = storedPending ? (JSON.parse(storedPending) as StoredPendingTeams) : null;
     if (pending) {
-      const pendingIds = new Set([...pending.teamA.players, ...pending.teamB.players].map((p) => p.playerId));
+      const substitutes = pending.substitutes ?? [];
+      const pendingIds = new Set(
+        [...pending.teamA.players, ...pending.teamB.players, ...substitutes].map((p) => p.playerId)
+      );
       for (const candidate of candidates) {
         candidate.selected = pendingIds.has(candidate.playerId);
       }
       this.teams.set(pending);
-      this.copyText.set(this.formatConvocados(pending));
+      this.substitutes.set(substitutes);
+      this.copyText.set(this.formatConvocados(pending, substitutes));
     }
 
     this.candidates.set(candidates);
@@ -123,11 +137,17 @@ export class TeamBalancerComponent {
     if (this.teams() && !confirm('Ya hay equipos armados sin resultado. ¿Reemplazarlos?')) {
       return;
     }
-    const selected = this.candidates().filter((c) => c.selected);
-    const teams = this.balancer.balance(selected, this.restrictions());
+    const selected = [...this.candidates().filter((c) => c.selected)].sort((a, b) => b.tdp - a.tdp);
+    const playing = selected.slice(0, this.maxPlayers);
+    const subs = selected.slice(this.maxPlayers);
+
+    const teams = this.balancer.balance(playing, this.restrictions());
     this.teams.set(teams);
-    this.copyText.set(this.formatConvocados(teams));
-    await this.store.setSetting(PENDING_TEAMS_KEY, JSON.stringify(teams));
+    this.substitutes.set(subs);
+    this.copyText.set(this.formatConvocados(teams, subs));
+
+    const pending: StoredPendingTeams = { ...teams, substitutes: subs };
+    await this.store.setSetting(PENDING_TEAMS_KEY, JSON.stringify(pending));
   }
 
   async addRestriction(): Promise<void> {
@@ -216,6 +236,7 @@ export class TeamBalancerComponent {
 
     await this.store.clearSetting(PENDING_TEAMS_KEY);
     this.teams.set(null);
+    this.substitutes.set([]);
     this.copyText.set('');
     this.candidates.update((list) => list.map((candidate) => ({ ...candidate, selected: false })));
   }
@@ -224,7 +245,7 @@ export class TeamBalancerComponent {
     return player.wanumber ? `${player.nombre} (${player.wanumber})` : player.nombre;
   }
 
-  private formatConvocados(teams: BalancedTeams): string {
+  private formatConvocados(teams: BalancedTeams, substitutes: BalancerPlayer[] = []): string {
     const gameDate = this.getNextThursday(new Date());
     const seasonStart = this.getSeasonStart(gameDate);
     const seasonYear = seasonStart.getFullYear();
@@ -238,8 +259,9 @@ export class TeamBalancerComponent {
         .join('\n');
       return `${label}\n${names}\nTOTAL ${team.total.toFixed(0)} | PROM ${team.promedio.toFixed(2)}`;
     };
+    const supList = substitutes.length ? substitutes.map((player) => player.nombre).join(', ') : 'Ninguno';
 
-    return `⚽ ${date} 7:00 PM | Fecha ${weekNumber} - ${seasonYear} | Invierno\n📍 Coloso de Hillsboro\n\n${format('🟧 EQUIPO A', teams.teamA)}\n\n${format('🔵 EQUIPO B', teams.teamB)}\n\n🪑 Sup: Ninguno\n🚫 Susp: Ninguno\n\n_*LAS OPINIONES VERTIDAS EN ESTA ALINEACIÓN SON DE EXCLUSIVA RESPONSABILIDAD DE Chat GPT Y NO REPRESENTAN EL PENSAMIENTO NI LA LÍNEA DE BULLYING DE LA FFCH NI DE NINGUNO DE SUS MIEMBROS. CUALQUIER QUEJA POR FAVOR DIRIGIRLA A LA DIRECCIÓN DE CORREO INDICADA EN EL MENSAJE DE EMAIL*_`;
+    return `⚽ ${date} 7:00 PM | Fecha ${weekNumber} - ${seasonYear} | Invierno\n📍 Coloso de Hillsboro\n\n${format('🟧 EQUIPO A', teams.teamA)}\n\n${format('🔵 EQUIPO B', teams.teamB)}\n\n🪑 Sup: ${supList}\n🚫 Susp: Ninguno\n\n_*LAS OPINIONES VERTIDAS EN ESTA ALINEACIÓN SON DE EXCLUSIVA RESPONSABILIDAD DE Chat GPT Y NO REPRESENTAN EL PENSAMIENTO NI LA LÍNEA DE BULLYING DE LA FFCH NI DE NINGUNO DE SUS MIEMBROS. CUALQUIER QUEJA POR FAVOR DIRIGIRLA A LA DIRECCIÓN DE CORREO INDICADA EN EL MENSAJE DE EMAIL*_`;
   }
 
   private getNextThursday(from: Date): Date {
