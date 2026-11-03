@@ -341,6 +341,7 @@ export class WhatsAppHandler {
     }
 
     async voteOnMessage(messageId, selectedOptions) {
+        await this.applyMsgKeyCompatShim();
         await this.client.pupPage.evaluate(
             async (targetMessageId, votes) => {
                 if (!targetMessageId) {
@@ -410,6 +411,10 @@ export class WhatsAppHandler {
             return message.id._serialized;
         }
 
+        if (message.id && typeof message.id.$1 === 'string') {
+            return message.id.$1;
+        }
+
         if (typeof message._serialized === 'string') {
             return message._serialized;
         }
@@ -442,6 +447,30 @@ export class WhatsAppHandler {
     }
 
     /**
+     * WhatsApp Web renamed MsgKey's serialized id from `_serialized` to `$1`.
+     * whatsapp-web.js <= 1.34.7 still reads `_serialized` (e.g. in its poll vote
+     * hook), which makes poll votes fail with "Vote send error". Restore
+     * `_serialized` as a read-only alias of `$1` until the library ships the fix.
+     * @returns {Promise<void>}
+     */
+    async applyMsgKeyCompatShim() {
+        await this.client.pupPage.evaluate(() => {
+            const MsgKey = window.require('WAWebMsgKey');
+            const proto = MsgKey?.prototype;
+            if (!proto || '_serialized' in proto) {
+                return;
+            }
+
+            Object.defineProperty(proto, '_serialized', {
+                configurable: true,
+                get() {
+                    return this.$1 ?? this.toString();
+                },
+            });
+        });
+    }
+
+    /**
      * Initialize the WhatsApp client, display QR code, and wait until ready.
      * @returns {Promise<void>}
      */
@@ -464,7 +493,8 @@ export class WhatsAppHandler {
             this.client.on('ready', () => {
                 console.log('WhatsApp client is ready!');
                 this.isReady = true;
-                this.cleanupExtraPages()
+                this.applyMsgKeyCompatShim()
+                    .then(() => this.cleanupExtraPages())
                     .catch(() => {})
                     .finally(resolve);
             });

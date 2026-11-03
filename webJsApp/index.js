@@ -484,7 +484,7 @@ async function runAutomatedConvocatoriaFlow(wsaHdl, options = {}) {
     });
     try {
         await wsaHdl.voteOnPoll(groupName, pollQuestion, pollAnswer, {
-            pollMessageId: createdPoll?.id?._serialized,
+            pollMessageId: wsaHdl.getSerializedMessageId(createdPoll),
         });
     } finally {
         // The convocatoria is already published, so advance the week even if voting fails
