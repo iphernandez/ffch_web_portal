@@ -1,0 +1,105 @@
+@if (event(); as ev) {
+  <h1>{{ ev.title }}</h1>
+
+  <section class="event-details">
+    <p><strong>Fecha:</strong> {{ formatDate(ev.date) }}</p>
+    <p><strong>Lugar:</strong> {{ ev.location }}</p>
+    @if (ev.deadline) {
+      <p><strong>Inscripciones hasta:</strong> {{ formatDate(ev.deadline) }}</p>
+    }
+    @if (ev.description) {
+      <p class="description">{{ ev.description }}</p>
+    }
+    <p class="hint">Asistir cuenta para la categoría TDP <strong>{{ categoryLabel(ev) }}</strong>.</p>
+  </section>
+
+  <section>
+    <h2>Mi inscripción</h2>
+    @if (myRegistration(); as mine) {
+      <p class="hint">
+        Enviada el {{ formatDate(mine.submittedAt) }}. Ya no se puede modificar; si necesitas un cambio, contacta a un
+        administrador.
+      </p>
+      <dl class="readonly">
+        <dt>Jugador</dt>
+        <dd>{{ mine.playerName }}</dd>
+        <dt>Asistiré</dt>
+        <dd>{{ mine.attending ? 'Sí' : 'No' }}</dd>
+        @if (mine.attending) {
+          @for (option of ev.options; track option.id) {
+            <dt>{{ option.label }}</dt>
+            <dd>{{ answerText(mine, option) }}</dd>
+          }
+        }
+        @if (mine.registeredBy) {
+          <dt>Registrado por</dt>
+          <dd>{{ mine.registeredBy }}</dd>
+        }
+      </dl>
+    } @else if (!open()) {
+      <p class="status">Las inscripciones para este evento ya cerraron.</p>
+    } @else {
+      <form class="event-form" (ngSubmit)="submit()">
+        @if (linkedPlayer(); as linked) {
+          <p><strong>Jugador:</strong> {{ linked.galactico }}</p>
+        } @else {
+          <label>
+            Jugador
+            <select name="playerId" [(ngModel)]="playerId" required>
+              <option value="" disabled>Selecciona…</option>
+              @for (player of availablePlayers(); track player.id) {
+                <option [value]="player.id">{{ player.galactico }}</option>
+              }
+            </select>
+          </label>
+          <p class="hint">Tu cuenta no está vinculada a un jugador; un administrador puede vincularla en Usuarios.</p>
+        }
+
+        <label class="check">
+          <input type="checkbox" name="attending" [(ngModel)]="attending" />
+          Asistiré
+        </label>
+
+        @if (attending) {
+          <app-event-answers [options]="ev.options" [answers]="answers" [usage]="usage()" />
+        }
+
+        <button type="submit" [disabled]="submitting() || !playerId">Enviar inscripción</button>
+      </form>
+    }
+  </section>
+
+  <section>
+    <h2>Asistentes ({{ attendees().length }})</h2>
+    @if (attendees().length) {
+      <div class="table-scroll">
+        <table class="attendees-table">
+          <thead>
+            <tr>
+              <th>Jugador</th>
+              @for (option of ev.options; track option.id) {
+                <th>{{ option.label }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (registration of attendees(); track registration.userId) {
+              <tr>
+                <td>{{ registration.playerName }}</td>
+                @for (option of ev.options; track option.id) {
+                  <td>{{ answerText(registration, option) }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="hint">Todavía nadie ha confirmado asistencia.</p>
+    }
+  </section>
+}
+
+@if (statusMessage()) {
+  <p class="status">{{ statusMessage() }}</p>
+}

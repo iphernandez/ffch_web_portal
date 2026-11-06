@@ -1,7 +1,9 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { marked } from 'marked';
+import { formatEventDate, isRegistrationOpen } from '../../core/models/event.model';
 import { DataStoreService } from '../../core/services/data-store.service';
+import { EventService } from '../../core/services/event.service';
 import { ScoringService, PlayerScoreSummary } from '../../core/services/scoring.service';
 import { TeamBalancerService } from '../../core/services/team-balancer.service';
 
@@ -31,6 +33,15 @@ export class DashboardComponent {
   readonly announcements = signal<string[]>([]);
   readonly announcementsCollapsed = signal(localStorage.getItem(ANNOUNCEMENTS_COLLAPSED_KEY) === 'true');
 
+  readonly activeEvent = computed(() => this.events.activeEvent());
+  readonly eventOpen = computed(() => {
+    const event = this.activeEvent();
+    return !!event && isRegistrationOpen(event);
+  });
+  /** null = unknown/loading. */
+  readonly registeredForEvent = signal<boolean | null>(null);
+  readonly formatDate = formatEventDate;
+
   toggleAnnouncements(): void {
     const next = !this.announcementsCollapsed();
     this.announcementsCollapsed.set(next);
@@ -40,10 +51,20 @@ export class DashboardComponent {
   constructor(
     private readonly store: DataStoreService,
     private readonly scoring: ScoringService,
-    private readonly balancer: TeamBalancerService
+    private readonly balancer: TeamBalancerService,
+    private readonly events: EventService
   ) {
     void this.load();
     void this.loadAnnouncements();
+    effect(() => {
+      const eventId = this.activeEvent()?.id;
+      this.registeredForEvent.set(null);
+      if (!eventId) return;
+      this.events
+        .getMyRegistration(eventId)
+        .then((registration) => this.registeredForEvent.set(!!registration))
+        .catch(() => this.registeredForEvent.set(null));
+    });
   }
 
   private async loadAnnouncements(): Promise<void> {

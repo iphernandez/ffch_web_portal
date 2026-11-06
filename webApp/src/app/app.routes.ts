@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { activeEventGuard } from './core/guards/active-event.guard';
 
 export const routes: Routes = [
   {
@@ -48,6 +49,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/team-balancer/team-balancer.component').then((m) => m.TeamBalancerComponent)
+  },
+  {
+    path: 'evento',
+    canActivate: [activeEventGuard],
+    loadComponent: () => import('./features/event/event.component').then((m) => m.EventComponent)
   },
   {
     path: 'convocatoria',

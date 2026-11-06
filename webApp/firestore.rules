@@ -19,6 +19,17 @@ service cloud.firestore {
       return !exists(/databases/$(database)/documents/meta/seedStatus);
     }
 
+    // Accounts linked to a player (Usuarios) may only register as that player.
+    function linkedPlayerAllows(playerId) {
+      let linked = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('playerId', null);
+      return linked == null || linked == playerId;
+    }
+
+    function beforeDeadline(eventId) {
+      let deadlineMs = get(/databases/$(database)/documents/events/$(eventId)).data.get('deadlineMs', null);
+      return deadlineMs == null || request.time.toMillis() < deadlineMs;
+    }
+
     // One doc per Firebase Auth user (uid). Users can read/update their own profile (but never
     // isAdmin/disabled on themselves); admins can read/list everyone and manage isAdmin/disabled.
     match /users/{userId} {
@@ -26,12 +37,14 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if isSelf(userId) &&
         request.resource.data.disabled == false &&
+        !('playerId' in request.resource.data) &&
         (request.resource.data.isAdmin == false ||
           (request.resource.data.isAdmin == true && notSeededYet()));
       allow update: if isAdmin() ||
         (isSelf(userId) &&
           request.resource.data.isAdmin == resource.data.isAdmin &&
-          request.resource.data.disabled == resource.data.disabled);
+          request.resource.data.disabled == resource.data.disabled &&
+          request.resource.data.get('playerId', null) == resource.data.get('playerId', null));
       allow delete: if false;
     }
 
@@ -46,6 +59,38 @@ service cloud.firestore {
     match /data/ffch-puntuacion {
       allow get: if isSignedIn();
       allow write: if isAdmin();
+    }
+
+    // Pointer to the single enabled event ({ eventId: string | null }); null hides the registration page.
+    match /meta/activeEvent {
+      allow get: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Event definitions (Pre Temporada / Galas / Team Building), managed by admins in Ajustes.
+    match /events/{eventId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+
+      // One registration per user (doc id = uid). Users can only create their own, only while the event
+      // is enabled and before its deadline, and can't edit it afterwards (read-only once submitted). Admins
+      // can register anyone (doc id = linked uid or "player-<playerId>"), mark it as applied to TDP, or delete
+      // it to let the user register again.
+      match /registrations/{userId} {
+        allow read: if isSignedIn();
+        allow create: if request.resource.data.userId == userId &&
+          request.resource.data.attending is bool &&
+          !('appliedToTdp' in request.resource.data) &&
+          (isAdmin() ||
+            (isSelf(userId) &&
+              !('registeredBy' in request.resource.data) &&
+              linkedPlayerAllows(request.resource.data.playerId) &&
+              get(/databases/$(database)/documents/meta/activeEvent).data.eventId == eventId &&
+              beforeDeadline(eventId)));
+        allow update: if isAdmin() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['appliedToTdp']);
+        allow delete: if isAdmin();
+      }
     }
   }
 }

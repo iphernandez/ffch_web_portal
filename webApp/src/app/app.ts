@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
+import { EventService } from './core/services/event.service';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +14,7 @@ export class App {
 
   constructor(
     protected readonly auth: AuthService,
+    protected readonly events: EventService,
     private readonly router: Router
   ) {}
 

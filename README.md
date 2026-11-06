@@ -4,7 +4,8 @@ Sends message to a contact or group on WhatsApp
 ## FFCH Puntuación (Angular web app)
 
 `webApp/` is an Angular web app that replaces `FFCH_Puntuacion/FFCH - Puntuacion.xlsx`: weekly
-attendance/payment capture, points/TDP calculation, team balancing, and convocatoria text generation.
+attendance/payment capture, points/TDP calculation, team balancing, convocatoria text generation, and event
+registration (Pre Temporada / Galas / Team Building) that feeds TDP participation.
 It runs entirely client-side (IndexedDB, no server) and is published free on GitHub Pages:
 
 - Live app: `https://iphernandez.github.io/ffch_web_portal/` (once deployed, see [webApp/DEPLOY.md](webApp/DEPLOY.md))

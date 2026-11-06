@@ -38,6 +38,8 @@ npm run build    # build de producción en dist/webApp/browser
 | `TeamBalancerService` | Arma 2 equipos balanceados por promedio de Puntos ("snake draft"). |
 | `MessageTemplateService` | Rellena plantillas `{{VAR}}` como `convocatoria.md`. |
 | `CsvImportService` | Migración única desde los CSV exportados del Excel original. |
+| `EventService` | Eventos (Pre Temporada / Galas / Team Building), evento habilitado e inscripciones en Firestore; aplica asistencias al TDP. |
+| `EventReportService` | Cupos y validación de opciones de eventos, reporte CSV y resumen para WhatsApp. |
 
 ### Mapeo de fórmulas del Excel original
 
@@ -56,18 +58,34 @@ tomadas para los casos ambiguos (PtsTemporadaAnterior, peso de Team Building, ta
 5. Cuando termines de editar, usa "⬆ Guardar cambios en Firestore" en **Ajustes** para que los demás
    dispositivos puedan sincronizar los cambios.
 
+### ¿Cuándo hay que usar "⬆ Guardar cambios en Firestore"?
+
+| Acción | Dónde se guarda | ¿Requiere el botón? |
+|---|---|---|
+| Crear/editar evento ("Guardar evento") | Firestore, al instante | No |
+| Habilitar/deshabilitar evento | Firestore, al instante | No |
+| Vincular cuenta ↔ jugador (Usuarios) | Firestore, al instante | No |
+| Inscripción de un usuario o de un admin a nombre de un jugador | Firestore, al instante | No |
+| Aplicar asistencias de eventos al TDP | Se sube a Firestore automáticamente cuando un admin abre TDP, se inscribe o usa "Aplicar asistencias al TDP" | No |
+| Ediciones manuales en TDP (casillas, pesos), Roster, Captura Semanal | Solo en IndexedDB del navegador | **Sí** |
+
+> "Guardar cambios" sube la copia local completa y reemplaza la de Firestore. Antes de editar TDP/Roster/Captura,
+> usa "⬇ Sincronizar desde Firestore" para no pisar cambios más recientes (por ejemplo, asistencias ya aplicadas).
+> Sincronizar reemplaza la copia local, así que primero guarda cualquier cambio local pendiente.
+
 ## Matriz de roles
 
 La app distingue dos tipos de acceso:
 
 | Rol | Acceso | Puede editar datos |
 |---|---|---:|
-| Usuario autenticado no admin | Dashboard, Roster, TDP, Captura Semanal, Equipos, Ayuda y Cuenta | No |
+| Usuario autenticado no admin | Dashboard, Roster, TDP, Captura Semanal, Equipos, Evento (si hay uno habilitado), Ayuda y Cuenta | Solo su propia inscripción a eventos |
 | Administrador | Todas las páginas | Sí |
 
 Enrutamiento real:
 
 - `authGuard` protege `/`, `/cuenta`, `/roster`, `/tdp`, `/captura`, `/equipos` y `/ayuda`.
+- `activeEventGuard` protege `/evento` (requiere sesión y un evento habilitado; si no, redirige a `/`).
 - `adminGuard` protege `/convocatoria`, `/ajustes` y `/usuarios`.
 - La lectura del documento compartido (`data/ffch-puntuacion`) está permitida a cualquier usuario autenticado
   (regla de Firestore); solo administradores pueden escribirlo.
@@ -89,6 +107,71 @@ La lógica es segura por diseño:
 - los cambios explícitos y los pushes siguen siendo solo para administradores.
 
 En otras palabras, la sincronización automática es una carga inicial de arranque, no un refresh silencioso en cada login.
+
+## Eventos e inscripción (`/evento`)
+
+Los eventos **Pre Temporada**, **Galas** y **Team Building** corresponden 1:1 a las categorías TDP del mismo
+nombre (`pretemporada`, `gala`, `teamBuilding`).
+
+**Administración (Ajustes → Eventos):**
+
+- Crear/editar un evento: categoría, título, descripción, fecha (`datetime-local`), lugar y **fecha límite de
+  inscripción** opcional (después de esa hora los usuarios ya no pueden inscribirse; también lo validan las reglas
+  de Firestore vía `deadlineMs`). El id del evento es `<categoría>-<año de la fecha>`, así que hay un evento por
+  categoría y año.
+- Opciones: "Asistiré" siempre está incluida; se pueden agregar opciones extra de tipo **Sí / No**, **Lista**
+  (valores separados por coma) o **Texto libre** (ej. "Llevo bebidas", "Platillo: Postre, Ensalada"). Cada opción
+  puede ser **Obligatoria** y tener un **Cupo**: máximo de asistentes que pueden marcar un Sí / No, o elegir cada
+  valor de una Lista (ej. solo 2 personas llevan asador). El cupo se valida en el cliente al enviar.
+- Habilitar un evento (radio): solo uno puede estar habilitado a la vez. Con "Ninguno", la página y el enlace del
+  menú quedan ocultos para todos.
+- **Archivo:** los eventos con fecha pasada se agrupan en "Eventos pasados" (el habilitado siempre se queda arriba).
+  Como cada edición anual es un documento distinto, el historial de inscripciones por año se conserva.
+  **Duplicar al próximo año** copia título, descripción, lugar y opciones al editor con la fecha +1 año, para
+  ajustar los detalles y guardar.
+- Ver inscripciones de cualquier evento, **Reabrir** (borra la inscripción para que el usuario se pueda inscribir de
+  nuevo), **Aplicar asistencias al TDP**, **Descargar CSV** (compatible con Excel) y **Copiar resumen WhatsApp**
+  (asistentes, qué lleva cada uno y totales por opción).
+- **Inscribir a un jugador:** un admin puede inscribir a cualquier jugador sin inscripción (ignora la fecha límite).
+  Si el jugador está vinculado a una cuenta se usa ese uid (el usuario la ve como suya); si no, el id es
+  `player-<playerId>`. Queda marcada con `registeredBy`.
+
+**Dashboard:** mientras hay un evento habilitado se muestra un banner con título, fecha, lugar y fecha límite, y un
+botón "Inscribirme" / "Ver mi inscripción ✓". Los anuncios de `public/anuncios.md` siguen siendo para avisos
+generales; evita duplicar ahí el evento habilitado.
+
+**Usuarios:** el enlace con el título del evento aparece en el menú solo mientras hay un evento habilitado. Si la
+cuenta está vinculada a un jugador (ver abajo) se usa ese jugador automáticamente; si no, el usuario lo elige (los
+que ya tienen inscripción no aparecen). Marca "Asistiré" y contesta las opciones.
+Al enviar, la inscripción se guarda directo en Firestore y la página queda en solo lectura para ese usuario. La
+página también muestra la lista de asistentes y lo que cada uno lleva.
+
+**Vincular cuentas con jugadores (Usuarios):** en la columna **Jugador** un administrador asigna a cada cuenta su
+jugador del roster (`users/{uid}.playerId`). Un jugador solo puede estar vinculado a una cuenta. Los usuarios no
+pueden cambiar su propio `playerId`, y las reglas de Firestore solo les permiten inscribirse como su jugador
+vinculado (las cuentas sin vincular aún pueden elegir).
+
+**Integración con TDP:** asistir marca la categoría del evento en el año de la fecha del evento
+(`<playerId>-<categoría>-<año>`, `participated: true`). Como los no-admins no pueden escribir el documento compartido
+`data/ffch-puntuacion`, el flujo es:
+
+1. La inscripción se guarda en `events/{eventId}/registrations/{uid}`.
+2. Mientras no se haya aplicado, la página TDP la muestra a todos como participación (sin escribir nada).
+3. Cuando un administrador se inscribe, abre la página TDP o usa "Aplicar asistencias al TDP", la app aplica
+   automáticamente las asistencias pendientes al documento compartido en Firestore (sobre la última versión remota,
+   sin pisar cambios locales sin guardar), las guarda en IndexedDB y marca cada inscripción con `appliedToTdp: true`.
+   A partir de ahí el TDP es la fuente de verdad, así que un admin puede desmarcar a alguien que no llegó.
+
+**Firestore:**
+
+| Ruta | Lectura | Escritura |
+|---|---|---|
+| `meta/activeEvent` (`{ eventId }`) | usuarios autenticados | admins |
+| `events/{eventId}` | usuarios autenticados | admins |
+| `events/{eventId}/registrations/{uid}` | usuarios autenticados | crear: el propio usuario solo si el evento está habilitado y antes de la fecha límite, o cualquier admin; actualizar: admins (solo `appliedToTdp`); borrar: admins |
+
+> Después de actualizar a esta versión hay que volver a publicar [`firestore.rules`](./firestore.rules) en la
+> consola de Firebase (ver [DEPLOY.md](./DEPLOY.md)).
 
 ## Cómo crea equipos el balanceador
 

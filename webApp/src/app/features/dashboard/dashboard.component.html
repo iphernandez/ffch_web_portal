@@ -1,3 +1,21 @@
+@if (activeEvent(); as event) {
+  <section class="event-banner">
+    <div class="event-banner-text">
+      <strong>{{ event.title }}</strong>
+      <span>📅 {{ formatDate(event.date) }}</span>
+      <span>📍 {{ event.location }}</span>
+      @if (event.deadline) {
+        <span class="deadline">
+          {{ eventOpen() ? 'Inscripciones hasta ' + formatDate(event.deadline) : 'Inscripciones cerradas' }}
+        </span>
+      }
+    </div>
+    <a routerLink="/evento" class="event-banner-cta">
+      {{ registeredForEvent() ? 'Ver mi inscripción ✓' : eventOpen() ? 'Inscribirme' : 'Ver evento' }}
+    </a>
+  </section>
+}
+
 @if (announcements().length > 0) {
   <section class="announcements" [class.collapsed]="announcementsCollapsed()">
     <button

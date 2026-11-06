@@ -9,6 +9,10 @@
     </label>
   </div>
 
+  @if (eventSyncMessage()) {
+    <p class="hint">{{ eventSyncMessage() }}</p>
+  }
+
   <div class="tdp-table-scroll">
     <table class="tdp-table">
       <thead>

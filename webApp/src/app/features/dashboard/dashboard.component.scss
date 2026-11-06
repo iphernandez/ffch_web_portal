@@ -1,3 +1,46 @@
+.event-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--ffch-navy);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1rem;
+
+  .event-banner-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    align-items: baseline;
+
+    strong {
+      font-size: 1.15rem;
+    }
+  }
+
+  .deadline {
+    color: var(--ffch-blue-light);
+    font-size: 0.9rem;
+  }
+
+  .event-banner-cta {
+    background: var(--ffch-blue);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &:hover {
+      background: var(--ffch-blue-dark);
+    }
+  }
+}
+
 .hero {
   display: flex;
   align-items: center;

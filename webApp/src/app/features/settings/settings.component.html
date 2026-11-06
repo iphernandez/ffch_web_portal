@@ -13,6 +13,197 @@
 </section>
 
 <section>
+  <h2>Eventos (inscripción)</h2>
+  <p class="hint">
+    Solo un evento puede estar habilitado a la vez. Mientras ninguno esté habilitado, la página de inscripción queda
+    oculta para todos. Asistir a un evento marca la categoría TDP correspondiente en el año de la fecha del evento.
+  </p>
+
+  <h3>Evento habilitado</h3>
+  <div class="event-list">
+    <label class="check">
+      <input type="radio" name="activeEvent" [checked]="!activeEventId()" (change)="setActiveEvent(null)" />
+      Ninguno (página oculta)
+    </label>
+    @for (event of upcomingEvents(); track event.id) {
+      <ng-container *ngTemplateOutlet="eventRow; context: { $implicit: event }" />
+    }
+  </div>
+
+  @if (pastEvents().length) {
+    <details class="archive">
+      <summary>Eventos pasados ({{ pastEvents().length }})</summary>
+      <p class="hint">
+        Se conservan como historial (inscripciones y TDP de cada año). Usa "Duplicar al próximo año" para crear la
+        siguiente edición con los mismos detalles y opciones.
+      </p>
+      <div class="event-list">
+        @for (event of pastEvents(); track event.id) {
+          <ng-container *ngTemplateOutlet="eventRow; context: { $implicit: event }" />
+        }
+      </div>
+    </details>
+  }
+
+  <ng-template #eventRow let-event>
+    <div class="event-row">
+      <label class="check">
+        <input
+          type="radio"
+          name="activeEvent"
+          [checked]="activeEventId() === event.id"
+          (change)="setActiveEvent(event.id)"
+        />
+        {{ event.title }} — {{ categoryLabel(event.category) }} {{ event.date.slice(0, 4) }}
+      </label>
+      <button type="button" (click)="editEvent(event)">Editar</button>
+      <button type="button" (click)="duplicateToNextYear(event)">Duplicar al próximo año</button>
+      <button type="button" (click)="showRegistrations(event.id)">Inscripciones</button>
+    </div>
+  </ng-template>
+
+  <h3>{{ editingId ? 'Editar evento' : 'Nuevo evento' }}</h3>
+  <form class="event-editor" (ngSubmit)="saveEvent()">
+    <label>
+      Categoría
+      <select name="category" [(ngModel)]="draft.category">
+        @for (option of eventCategories; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+    <label>Título <input type="text" name="title" maxlength="120" [(ngModel)]="draft.title" required /></label>
+    <label>Fecha <input type="datetime-local" name="date" [(ngModel)]="draft.date" required /></label>
+    <label>
+      Fecha límite de inscripción (opcional)
+      <input type="datetime-local" name="deadline" [(ngModel)]="draft.deadline" />
+    </label>
+    <label>Lugar <input type="text" name="location" maxlength="200" [(ngModel)]="draft.location" required /></label>
+    <label>
+      Descripción
+      <textarea name="description" rows="4" maxlength="2000" [(ngModel)]="draft.description"></textarea>
+    </label>
+
+    <fieldset>
+      <legend>Opciones</legend>
+      <p class="hint">
+        "Asistiré" siempre está incluida. Agrega opciones extra (ej. "Llevo bebidas", "¿Qué llevas?"). Cupo: máximo de
+        asistentes que pueden marcar la opción (o elegir cada valor de una lista); vacío = sin límite.
+      </p>
+      @for (option of draft.options; track option.id) {
+        <div class="option-row">
+          <input type="text" placeholder="Etiqueta" maxlength="120" [name]="'label-' + option.id" [(ngModel)]="option.label" />
+          <select [name]="'type-' + option.id" [(ngModel)]="option.type">
+            <option value="checkbox">Sí / No</option>
+            <option value="choice">Lista</option>
+            <option value="text">Texto libre</option>
+          </select>
+          @if (option.type === 'choice') {
+            <input
+              type="text"
+              placeholder="Valores separados por coma"
+              [name]="'choices-' + option.id"
+              [(ngModel)]="option.choicesText"
+            />
+          }
+          @if (option.type !== 'text') {
+            <label class="check">
+              Cupo
+              <input type="number" min="1" class="limit" [name]="'limit-' + option.id" [(ngModel)]="option.limit" />
+            </label>
+          }
+          <label class="check">
+            <input type="checkbox" [name]="'required-' + option.id" [(ngModel)]="option.required" />
+            Obligatoria
+          </label>
+          <button type="button" (click)="removeOption(option.id)">Quitar</button>
+        </div>
+      }
+      <button type="button" (click)="addOption()">+ Agregar opción</button>
+    </fieldset>
+
+    <div class="inline-form">
+      <button type="submit">Guardar evento</button>
+      <button type="button" (click)="newEvent()">Nuevo</button>
+    </div>
+  </form>
+
+  @if (registrationsEvent(); as event) {
+    <h3>Inscripciones: {{ event.title }} ({{ registrations().length }})</h3>
+    @if (event.deadline) {
+      <p class="hint">Fecha límite: {{ formatDate(event.deadline) }}</p>
+    }
+    <div class="inline-form">
+      <button type="button" (click)="applyRegistrationsToTdp()">Aplicar asistencias al TDP</button>
+      <button type="button" (click)="downloadCsv()">Descargar CSV</button>
+      <button type="button" (click)="copyWhatsapp()">Copiar resumen WhatsApp</button>
+    </div>
+    @if (whatsappText()) {
+      <textarea class="whatsapp" rows="10" readonly [value]="whatsappText()"></textarea>
+    }
+    <div class="table-scroll">
+      <table class="registrations-table">
+        <thead>
+          <tr>
+            <th>Jugador</th>
+            <th>Usuario</th>
+            <th>Asiste</th>
+            @for (option of event.options; track option.id) {
+              <th>{{ option.label }}</th>
+            }
+            <th>TDP</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (registration of registrations(); track registration.userId) {
+            <tr>
+              <td>{{ registration.playerName }}</td>
+              <td>{{ registration.userName }}{{ registration.registeredBy ? ' (por ' + registration.registeredBy + ')' : '' }}</td>
+              <td>{{ registration.attending ? 'Sí' : 'No' }}</td>
+              @for (option of event.options; track option.id) {
+                <td>{{ registration.attending ? registrationAnswer(registration, option) : '—' }}</td>
+              }
+              <td>{{ registration.appliedToTdp ? 'Aplicado' : registration.attending ? 'Pendiente' : '—' }}</td>
+              <td><button type="button" (click)="deleteRegistration(registration)">Reabrir</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Inscribir a un jugador</h4>
+    <p class="hint">
+      Para jugadores sin cuenta o que no pudieron inscribirse. Ignora la fecha límite; si el jugador está vinculado a una
+      cuenta, esa cuenta verá la inscripción como suya.
+    </p>
+    <form class="event-editor" (ngSubmit)="submitOnBehalf()">
+      <label>
+        Jugador
+        <select name="behalfPlayerId" [(ngModel)]="behalfPlayerId" required>
+          <option value="" disabled>Selecciona…</option>
+          @for (player of behalfPlayers(); track player.id) {
+            <option [value]="player.id">{{ player.galactico }}</option>
+          }
+        </select>
+      </label>
+      <label class="check">
+        <input type="checkbox" name="behalfAttending" [(ngModel)]="behalfAttending" />
+        Asiste
+      </label>
+      @if (behalfAttending) {
+        <app-event-answers [options]="event.options" [answers]="behalfAnswers" [usage]="usage()" />
+      }
+      <button type="submit" [disabled]="!behalfPlayerId">Inscribir</button>
+    </form>
+  }
+
+  @if (eventMessage()) {
+    <p class="status">{{ eventMessage() }}</p>
+  }
+</section>
+
+<section>
   <h2>Copia de seguridad local</h2>
   <div class="inline-form">
     <button type="button" (click)="exportJson()">Descargar JSON</button>

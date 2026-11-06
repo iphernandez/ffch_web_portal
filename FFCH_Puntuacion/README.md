@@ -43,7 +43,9 @@ Verificadas contra la tabla de leyenda al final de `FFCH - Puntuacion - TDP.csv`
 - `TDP%` = suma ponderada de participación histórica por categoría/año: Año (2%), Pre temporada (1%),
   Galas (1%), Socios Fundadores (2%), Partido del Pavo (1%), Anfitrión Gala (1%), Team Building (1%,
   **peso independiente** del de Anfitrión Gala aunque el Excel original reusaba esa misma celda). Los
-  pesos y participaciones por año se administran en la página TDP (solo administradores).
+  pesos y participaciones por año se administran en la página TDP (solo administradores). Pre Temporada,
+  Galas y Team Building también se marcan automáticamente cuando un jugador confirma asistencia en la página
+  de inscripción a eventos (ver "Eventos e inscripción" en [`../webApp/README.md`](../webApp/README.md)).
 
   > **"Socios Fundadores" es distinto a las demás categorías**: en el Excel original es una **única
   > columna** (no una por año, a diferencia de Año/Pre temporada/Galas/Partido del Pavo/Anfitrión

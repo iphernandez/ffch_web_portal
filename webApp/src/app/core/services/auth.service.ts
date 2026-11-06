@@ -309,6 +309,25 @@ export class AuthService {
     return { success: true };
   }
 
+  /** Links an account to a roster player (or unlinks with null); a player can be linked to only one account. */
+  async setPlayer(userId: string, playerId: string | null): Promise<AuthResult> {
+    const requester = this.currentUser();
+    if (!requester?.isAdmin) return { success: false, message: 'Solo un administrador puede hacer esto.' };
+
+    if (playerId) {
+      const linked = await getDocs(query(collection(firestore, USERS_COLLECTION), where('playerId', '==', playerId)));
+      if (linked.docs.some((d) => d.id !== userId)) {
+        return { success: false, message: 'Ese jugador ya está vinculado a otra cuenta.' };
+      }
+    }
+
+    await updateDoc(doc(firestore, USERS_COLLECTION, userId), { playerId });
+    if (requester.id === userId) {
+      this.currentUser.set({ ...requester, playerId });
+    }
+    return { success: true };
+  }
+
   private async blockedIfLastAdmin(userId: string): Promise<AuthResult | null> {
     const target = await this.loadProfile(userId);
     if (!target) return { success: false, message: 'Usuario no encontrado.' };

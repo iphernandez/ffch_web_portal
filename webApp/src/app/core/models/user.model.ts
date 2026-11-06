@@ -10,4 +10,6 @@ export interface PublicUser {
   disabled: boolean;
   mustChangePassword: boolean;
   createdAt: string;
+  /** Roster player this account represents; set only by admins in Usuarios. */
+  playerId?: string | null;
 }

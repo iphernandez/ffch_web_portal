@@ -1,5 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
+import { DataStoreService } from '../../core/services/data-store.service';
+import { Player } from '../../core/models/player.model';
 import { PublicUser } from '../../core/models/user.model';
 
 @Component({
@@ -10,18 +12,39 @@ import { PublicUser } from '../../core/models/user.model';
 })
 export class AdminUsersComponent {
   readonly users = signal<PublicUser[]>([]);
+  readonly players = signal<Player[]>([]);
   readonly loading = signal(true);
   readonly statusMessage = signal('');
   readonly statusIsError = signal(false);
 
-  constructor(private readonly auth: AuthService) {
+  /** playerId -> userId, to prevent linking one player to two accounts. */
+  readonly linkedPlayers = computed(
+    () => new Map(this.users().filter((user) => user.playerId).map((user) => [user.playerId as string, user.id]))
+  );
+
+  constructor(
+    private readonly auth: AuthService,
+    private readonly store: DataStoreService
+  ) {
     void this.load();
   }
 
   async load(): Promise<void> {
     this.loading.set(true);
-    this.users.set(await this.auth.listUsers());
+    const [users, players] = await Promise.all([this.auth.listUsers(), this.store.players.orderBy('galactico').toArray()]);
+    this.users.set(users);
+    this.players.set(players);
     this.loading.set(false);
+  }
+
+  isLinkedToOther(playerId: string, user: PublicUser): boolean {
+    const owner = this.linkedPlayers().get(playerId);
+    return !!owner && owner !== user.id;
+  }
+
+  async setPlayer(user: PublicUser, playerId: string): Promise<void> {
+    const result = await this.auth.setPlayer(user.id, playerId || null);
+    await this.reportAndReload(result);
   }
 
   async toggleAdmin(user: PublicUser): Promise<void> {
