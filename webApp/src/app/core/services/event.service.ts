@@ -1,6 +1,7 @@
 import { Injectable, effect, signal, untracked } from '@angular/core';
 import {
   Unsubscribe,
+  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -14,6 +15,8 @@ import { firestore } from './firebase';
 import { AuthService } from './auth.service';
 import { DataStoreService } from './data-store.service';
 import { RemoteSyncService } from './remote-sync.service';
+import { EventReportService } from './event-report.service';
+import { environment } from '../../../environments/environment';
 import { EventRegistration, FfchEvent, eventYear } from '../models/event.model';
 import { TdpHistoryEntry } from '../models/tdp.model';
 
@@ -44,7 +47,8 @@ export class EventService {
   constructor(
     private readonly auth: AuthService,
     private readonly store: DataStoreService,
-    private readonly remoteSync: RemoteSyncService
+    private readonly remoteSync: RemoteSyncService,
+    private readonly report: EventReportService
   ) {
     effect(() => {
       const userId = this.auth.currentUser()?.id ?? null;
@@ -103,6 +107,20 @@ export class EventService {
       doc(firestore, EVENTS_COLLECTION, eventId, REGISTRATIONS_SUBCOLLECTION, registration.userId),
       registration
     );
+  }
+
+  /**
+   * Queues a confirmation email in the collection watched by the `sendQueuedMail` Cloud Function
+   * (the browser can't send email itself). Returns false when emails are disabled.
+   */
+  async sendConfirmationEmail(to: string, event: FfchEvent, registration: EventRegistration): Promise<boolean> {
+    if (!environment.mailCollection || !to) return false;
+    await addDoc(collection(firestore, environment.mailCollection), {
+      to: [to],
+      message: this.report.confirmationEmail(event, registration, environment.eventPageUrl),
+      createdAt: new Date().toISOString()
+    });
+    return true;
   }
 
   /** Admin-only: deleting a registration lets that user submit again (e.g. they made a mistake). */

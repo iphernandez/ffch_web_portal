@@ -14,7 +14,8 @@ import {
   FfchEvent,
   eventCategoryLabel,
   eventId,
-  formatEventDate
+  formatEventDate,
+  safeHttpUrl
 } from '../../core/models/event.model';
 import { Player } from '../../core/models/player.model';
 import { PublicUser } from '../../core/models/user.model';
@@ -35,11 +36,21 @@ interface EventDraft {
   date: string;
   deadline: string;
   location: string;
+  locationUrl: string;
   options: DraftOption[];
 }
 
 function emptyDraft(): EventDraft {
-  return { category: 'pretemporada', title: '', description: '', date: '', deadline: '', location: '', options: [] };
+  return {
+    category: 'pretemporada',
+    title: '',
+    description: '',
+    date: '',
+    deadline: '',
+    location: '',
+    locationUrl: '',
+    options: []
+  };
 }
 
 function shiftYear(value: string): string {
@@ -130,6 +141,7 @@ export class SettingsComponent {
       date: event.date,
       deadline: event.deadline ?? '',
       location: event.location,
+      locationUrl: event.locationUrl ?? '',
       options: event.options.map((option) => ({
         ...option,
         required: option.required ?? false,
@@ -173,6 +185,11 @@ export class SettingsComponent {
       this.eventMessage.set('La fecha límite de inscripción debe ser antes del evento.');
       return;
     }
+    const locationUrl = this.draft.locationUrl.trim() ? safeHttpUrl(this.draft.locationUrl) : null;
+    if (this.draft.locationUrl.trim() && !locationUrl) {
+      this.eventMessage.set('El enlace del lugar debe ser una URL completa que empiece con http:// o https://.');
+      return;
+    }
     const options: EventOption[] = this.draft.options
       .map((option) => ({
         id: option.id,
@@ -204,6 +221,7 @@ export class SettingsComponent {
       description: this.draft.description.trim(),
       date,
       location,
+      locationUrl,
       options,
       deadline: deadline || null,
       deadlineMs: deadline ? new Date(deadline).getTime() : null,
@@ -281,6 +299,15 @@ export class SettingsComponent {
       );
       this.resetBehalfForm();
       this.eventMessage.set(`Inscripción de ${player.galactico} guardada.`);
+      if (linkedUser) {
+        try {
+          if (await this.events.sendConfirmationEmail(linkedUser.email, event, registration)) {
+            this.eventMessage.set(`Inscripción de ${player.galactico} guardada; confirmación enviada a ${linkedUser.email}.`);
+          }
+        } catch (error) {
+          console.error('No se pudo enviar el correo de confirmación:', error);
+        }
+      }
       if (registration.attending) await this.applyRegistrationsToTdp();
     } catch (error) {
       this.eventMessage.set(this.errorMessage(error));

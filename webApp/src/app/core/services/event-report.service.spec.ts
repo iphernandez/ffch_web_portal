@@ -60,4 +60,25 @@ describe('EventReportService', () => {
     expect(text).toContain('- Bebidas: 1/1');
     expect(text).toContain('- Platillo: Postre 1/1, Ensalada 0/1');
   });
+
+  it('builds a confirmation email with details, answers and escaped HTML', () => {
+    const email = service.confirmationEmail(
+      { ...event, locationUrl: 'https://maps.app.goo.gl/abc' },
+      registration({ userName: '<b>Pato</b>', answers: { drinks: true, dish: 'Postre', note: '<script>' } }),
+      'https://example.com/#/evento'
+    );
+    expect(email.subject).toBe('Inscripción recibida: Gala');
+    expect(email.text).toContain('Lugar: Hillsboro');
+    expect(email.text).toContain('Mapa / enlace: https://maps.app.goo.gl/abc');
+    expect(email.text).toContain('Platillo: Postre');
+    expect(email.html).toContain('<a href="https://maps.app.goo.gl/abc">');
+    expect(email.html).toContain('&lt;script&gt;');
+    expect(email.html).not.toContain('<b>Pato</b>');
+  });
+
+  it('omits options from the email when not attending', () => {
+    const email = service.confirmationEmail(event, registration({ attending: false }), 'https://example.com');
+    expect(email.text).toContain('Asistiré: No');
+    expect(email.text).not.toContain('Bebidas');
+  });
 });

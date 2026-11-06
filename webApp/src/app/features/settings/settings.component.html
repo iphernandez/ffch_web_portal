@@ -80,6 +80,10 @@
     </label>
     <label>Lugar <input type="text" name="location" maxlength="200" [(ngModel)]="draft.location" required /></label>
     <label>
+      Enlace del lugar (opcional, ej. Google Maps)
+      <input type="url" name="locationUrl" maxlength="500" placeholder="https://maps.app.goo.gl/..." [(ngModel)]="draft.locationUrl" />
+    </label>
+    <label>
       Descripción
       <textarea name="description" rows="4" maxlength="2000" [(ngModel)]="draft.description"></textarea>
     </label>

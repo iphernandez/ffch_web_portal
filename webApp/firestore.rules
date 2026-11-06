@@ -67,6 +67,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Outbox for the `sendQueuedMail` Cloud Function (it reads/updates via the Admin SDK).
+    // Users may only email themselves; admins may email any account (registrations on someone's behalf).
+    match /mail/{mailId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['to', 'message', 'createdAt']) &&
+        request.resource.data.to is list && request.resource.data.to.size() == 1 &&
+        (request.resource.data.to[0] == request.auth.token.email || isAdmin());
+      allow read, update, delete: if false;
+    }
+
     // Event definitions (Pre Temporada / Galas / Team Building), managed by admins in Ajustes.
     match /events/{eventId} {
       allow read: if isSignedIn();

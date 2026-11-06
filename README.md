@@ -11,6 +11,8 @@ It runs entirely client-side (IndexedDB, no server) and is published free on Git
 - Live app: `https://iphernandez.github.io/ffch_web_portal/` (once deployed, see [webApp/DEPLOY.md](webApp/DEPLOY.md))
 - Local dev / docs: [webApp/README.md](webApp/README.md)
 - Data/formula migration notes: [FFCH_Puntuacion/README.md](FFCH_Puntuacion/README.md)
+- `functions/` + `firebase.json`: Cloud Function `sendQueuedMail` that sends event confirmation emails from the
+  Firestore `mail` collection (setup: [webApp/DEPLOY.md](webApp/DEPLOY.md) section 0.1)
 
 ## Web JS CLI help
 

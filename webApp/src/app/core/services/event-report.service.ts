@@ -1,7 +1,29 @@
 import { Injectable } from '@angular/core';
-import { EventAnswers, EventOption, EventRegistration, FfchEvent, formatEventDate } from '../models/event.model';
+import {
+  EventAnswers,
+  EventOption,
+  EventRegistration,
+  FfchEvent,
+  formatEventDate,
+  safeHttpUrl
+} from '../models/event.model';
 
 export type OptionUsage = Record<string, number>;
+
+export interface EmailContent {
+  subject: string;
+  text: string;
+  html: string;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
 
 /** Pure helpers for event registrations: option capacity, validation, CSV report and WhatsApp summary. */
 @Injectable({ providedIn: 'root' })
@@ -90,7 +112,10 @@ export class EventReportService {
   toWhatsapp(event: FfchEvent, registrations: EventRegistration[]): string {
     const attendees = registrations.filter((registration) => registration.attending);
     const absent = registrations.filter((registration) => !registration.attending);
-    const lines = [`*${event.title}*`, `📅 ${formatEventDate(event.date)}`, `📍 ${event.location}`, '', `✅ Asisten (${attendees.length}):`];
+    const lines = [`*${event.title}*`, `📅 ${formatEventDate(event.date)}`, `📍 ${event.location}`];
+    const locationUrl = safeHttpUrl(event.locationUrl);
+    if (locationUrl) lines.push(locationUrl);
+    lines.push('', `✅ Asisten (${attendees.length}):`);
 
     attendees.forEach((registration, index) => {
       const details = event.options
@@ -125,6 +150,57 @@ export class EventReportService {
     if (totals.length) lines.push('', '📊 Resumen:', ...totals);
 
     return lines.join('\n');
+  }
+
+  /** Confirmation sent to the registrant; all user/admin-entered text is HTML-escaped. */
+  confirmationEmail(event: FfchEvent, registration: EventRegistration, eventPageUrl: string): EmailContent {
+    const locationUrl = safeHttpUrl(event.locationUrl);
+    const details: Array<[string, string]> = [
+      ['Evento', event.title],
+      ['Fecha', formatEventDate(event.date)],
+      ['Lugar', event.location],
+      ...(locationUrl ? [['Mapa / enlace', locationUrl] as [string, string]] : []),
+      ['Jugador', registration.playerName],
+      ['Asistiré', registration.attending ? 'Sí' : 'No'],
+      ...(registration.attending
+        ? event.options.map((option) => [option.label, this.answerText(registration, option)] as [string, string])
+        : []),
+      ...(registration.registeredBy ? [['Registrado por', registration.registeredBy] as [string, string]] : [])
+    ];
+
+    const subject = `Inscripción recibida: ${event.title}`;
+    const text = [
+      `Hola ${registration.userName},`,
+      '',
+      `Recibimos tu inscripción para "${event.title}".`,
+      '',
+      ...details.map(([label, value]) => `${label}: ${value}`),
+      ...(event.description ? ['', event.description] : []),
+      '',
+      `Ver evento: ${eventPageUrl}`,
+      '',
+      'F.F.C.H.'
+    ].join('\n');
+
+    const rows = details
+      .map(([label, value]) => {
+        const cell =
+          value === locationUrl
+            ? `<a href="${escapeHtml(value)}">${escapeHtml(value)}</a>`
+            : escapeHtml(value);
+        return `<tr><th align="left" style="padding:4px 12px 4px 0">${escapeHtml(label)}</th><td>${cell}</td></tr>`;
+      })
+      .join('');
+    const html = [
+      `<p>Hola ${escapeHtml(registration.userName)},</p>`,
+      `<p>Recibimos tu inscripción para <strong>${escapeHtml(event.title)}</strong>.</p>`,
+      `<table>${rows}</table>`,
+      event.description ? `<p style="white-space:pre-wrap">${escapeHtml(event.description)}</p>` : '',
+      `<p><a href="${escapeHtml(eventPageUrl)}">Ver evento</a></p>`,
+      '<p>F.F.C.H.</p>'
+    ].join('');
+
+    return { subject, text, html };
   }
 
   private csvCell(value: string): string {

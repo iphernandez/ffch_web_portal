@@ -3,7 +3,14 @@
 
   <section class="event-details">
     <p><strong>Fecha:</strong> {{ formatDate(ev.date) }}</p>
-    <p><strong>Lugar:</strong> {{ ev.location }}</p>
+    <p>
+      <strong>Lugar:</strong>
+      @if (locationUrl(); as url) {
+        <a [href]="url" target="_blank" rel="noopener noreferrer">{{ ev.location }}</a>
+      } @else {
+        {{ ev.location }}
+      }
+    </p>
     @if (ev.deadline) {
       <p><strong>Inscripciones hasta:</strong> {{ formatDate(ev.deadline) }}</p>
     }

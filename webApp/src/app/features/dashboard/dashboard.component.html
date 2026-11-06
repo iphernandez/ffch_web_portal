@@ -3,7 +3,14 @@
     <div class="event-banner-text">
       <strong>{{ event.title }}</strong>
       <span>📅 {{ formatDate(event.date) }}</span>
-      <span>📍 {{ event.location }}</span>
+      <span>
+        📍
+        @if (eventLocationUrl(); as url) {
+          <a [href]="url" target="_blank" rel="noopener noreferrer">{{ event.location }}</a>
+        } @else {
+          {{ event.location }}
+        }
+      </span>
       @if (event.deadline) {
         <span class="deadline">
           {{ eventOpen() ? 'Inscripciones hasta ' + formatDate(event.deadline) : 'Inscripciones cerradas' }}

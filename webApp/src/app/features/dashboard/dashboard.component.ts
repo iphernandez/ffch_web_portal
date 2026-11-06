@@ -1,7 +1,7 @@
 import { Component, computed, effect, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { marked } from 'marked';
-import { formatEventDate, isRegistrationOpen } from '../../core/models/event.model';
+import { formatEventDate, isRegistrationOpen, safeHttpUrl } from '../../core/models/event.model';
 import { DataStoreService } from '../../core/services/data-store.service';
 import { EventService } from '../../core/services/event.service';
 import { ScoringService, PlayerScoreSummary } from '../../core/services/scoring.service';
@@ -41,6 +41,7 @@ export class DashboardComponent {
   /** null = unknown/loading. */
   readonly registeredForEvent = signal<boolean | null>(null);
   readonly formatDate = formatEventDate;
+  readonly eventLocationUrl = computed(() => safeHttpUrl(this.activeEvent()?.locationUrl));
 
   toggleAnnouncements(): void {
     const next = !this.announcementsCollapsed();

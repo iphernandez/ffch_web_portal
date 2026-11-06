@@ -39,7 +39,7 @@ npm run build    # build de producción en dist/webApp/browser
 | `MessageTemplateService` | Rellena plantillas `{{VAR}}` como `convocatoria.md`. |
 | `CsvImportService` | Migración única desde los CSV exportados del Excel original. |
 | `EventService` | Eventos (Pre Temporada / Galas / Team Building), evento habilitado e inscripciones en Firestore; aplica asistencias al TDP. |
-| `EventReportService` | Cupos y validación de opciones de eventos, reporte CSV y resumen para WhatsApp. |
+| `EventReportService` | Cupos y validación de opciones de eventos, reporte CSV, resumen para WhatsApp y contenido del correo de confirmación. |
 
 ### Mapeo de fórmulas del Excel original
 
@@ -115,7 +115,9 @@ nombre (`pretemporada`, `gala`, `teamBuilding`).
 
 **Administración (Ajustes → Eventos):**
 
-- Crear/editar un evento: categoría, título, descripción, fecha (`datetime-local`), lugar y **fecha límite de
+- Crear/editar un evento: categoría, título, descripción, fecha (`datetime-local`), lugar, **enlace del lugar**
+  opcional (Google Maps u otra página; solo URLs `http(s)://`, se muestra como link en la página del evento, el
+  banner del Dashboard, el correo y el resumen de WhatsApp) y **fecha límite de
   inscripción** opcional (después de esa hora los usuarios ya no pueden inscribirse; también lo validan las reglas
   de Firestore vía `deadlineMs`). El id del evento es `<categoría>-<año de la fecha>`, así que hay un evento por
   categoría y año.
@@ -146,6 +148,12 @@ que ya tienen inscripción no aparecen). Marca "Asistiré" y contesta las opcion
 Al enviar, la inscripción se guarda directo en Firestore y la página queda en solo lectura para ese usuario. La
 página también muestra la lista de asistentes y lo que cada uno lleva.
 
+**Correo de confirmación:** al inscribirse (o cuando un admin inscribe a un jugador vinculado a una cuenta) se envía
+un correo al usuario con el evento, fecha, lugar (con enlace), descripción, su respuesta de asistencia y las opciones
+elegidas. Se envía escribiendo en la colección `mail`, que procesa la Cloud Function `sendQueuedMail`
+([`../functions/index.js`](../functions/index.js), configuración en [DEPLOY.md](./DEPLOY.md) sección 0.1). Si
+falla, la inscripción igual queda guardada.
+
 **Vincular cuentas con jugadores (Usuarios):** en la columna **Jugador** un administrador asigna a cada cuenta su
 jugador del roster (`users/{uid}.playerId`). Un jugador solo puede estar vinculado a una cuenta. Los usuarios no
 pueden cambiar su propio `playerId`, y las reglas de Firestore solo les permiten inscribirse como su jugador
@@ -169,6 +177,7 @@ vinculado (las cuentas sin vincular aún pueden elegir).
 | `meta/activeEvent` (`{ eventId }`) | usuarios autenticados | admins |
 | `events/{eventId}` | usuarios autenticados | admins |
 | `events/{eventId}/registrations/{uid}` | usuarios autenticados | crear: el propio usuario solo si el evento está habilitado y antes de la fecha límite, o cualquier admin; actualizar: admins (solo `appliedToTdp`); borrar: admins |
+| `mail/{id}` | nadie (solo la Cloud Function) | crear: un usuario solo a su propio correo; admins a cualquiera |
 
 > Después de actualizar a esta versión hay que volver a publicar [`firestore.rules`](./firestore.rules) en la
 > consola de Firebase (ver [DEPLOY.md](./DEPLOY.md)).

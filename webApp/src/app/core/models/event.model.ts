@@ -33,6 +33,8 @@ export interface FfchEvent {
   /** Local date-time as entered in `<input type="datetime-local">` (YYYY-MM-DDTHH:mm). */
   date: string;
   location: string;
+  /** Optional link for the location (Google Maps or any page); only http(s) URLs are accepted. */
+  locationUrl?: string | null;
   options: EventOption[];
   /** Registration deadline as entered (datetime-local); null = open until the event is disabled. */
   deadline?: string | null;
@@ -70,6 +72,17 @@ export function formatEventDate(value: string): string {
 
 export function eventCategoryLabel(category: EventCategory): string {
   return EVENT_CATEGORIES.find((option) => option.value === category)?.label ?? category;
+}
+
+/** Returns the URL only if it's an absolute http(s) URL, so `javascript:` and similar can't be stored or linked. */
+export function safeHttpUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 export function eventYear(event: Pick<FfchEvent, 'date'>): number {

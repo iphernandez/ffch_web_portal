@@ -9,7 +9,8 @@ import {
   eventCategoryLabel,
   eventYear,
   formatEventDate,
-  isRegistrationOpen
+  isRegistrationOpen,
+  safeHttpUrl
 } from '../../core/models/event.model';
 import { Player } from '../../core/models/player.model';
 import { AuthService } from '../../core/services/auth.service';
@@ -53,6 +54,7 @@ export class EventComponent {
     return !!event && isRegistrationOpen(event);
   });
   readonly formatDate = formatEventDate;
+  readonly locationUrl = computed(() => safeHttpUrl(this.event()?.locationUrl));
 
   playerId = '';
   attending = false;
@@ -142,6 +144,14 @@ export class EventComponent {
       this.statusMessage.set(this.errorMessage(error));
       this.submitting.set(false);
       return;
+    }
+
+    try {
+      if (await this.events.sendConfirmationEmail(user.email, event, registration)) {
+        this.statusMessage.set(`¡Inscripción enviada! Te enviamos la confirmación a ${user.email}.`);
+      }
+    } catch (error) {
+      console.error('No se pudo enviar el correo de confirmación:', error);
     }
 
     if (registration.attending && user.isAdmin) {
