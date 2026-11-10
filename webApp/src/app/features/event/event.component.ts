@@ -6,6 +6,7 @@ import {
   EventOption,
   EventRegistration,
   FfchEvent,
+  GUEST_NAME_MAX_LENGTH,
   eventCategoryLabel,
   eventYear,
   formatEventDate,
@@ -59,6 +60,12 @@ export class EventComponent {
   playerId = '';
   attending = false;
   answers: EventAnswers = {};
+  guestName = '';
+  readonly guestNameMaxLength = GUEST_NAME_MAX_LENGTH;
+
+  get isAdmin(): boolean {
+    return this.auth.currentUser()?.isAdmin ?? false;
+  }
 
   constructor(
     private readonly events: EventService,
@@ -171,6 +178,36 @@ export class EventComponent {
 
   answerText(registration: EventRegistration, option: EventOption): string {
     return this.report.answerText(registration, option);
+  }
+
+  attendeeName(registration: EventRegistration): string {
+    return this.report.attendeeName(registration);
+  }
+
+  async addGuest(): Promise<void> {
+    const event = this.event();
+    const admin = this.auth.currentUser();
+    if (!event || !admin?.isAdmin) return;
+    try {
+      const guest = await this.events.addGuest(event.id, this.guestName, admin.name, this.registrations());
+      this.registrations.update((items) => [...items, guest]);
+      this.guestName = '';
+      this.statusMessage.set(`${guest.playerName} agregado a la lista de asistentes.`);
+    } catch (error) {
+      this.statusMessage.set(this.errorMessage(error));
+    }
+  }
+
+  async removeGuest(registration: EventRegistration): Promise<void> {
+    const event = this.event();
+    if (!event || !this.isAdmin || !registration.guest) return;
+    if (!confirm(`¿Quitar a ${registration.playerName} de la lista de asistentes?`)) return;
+    try {
+      await this.events.deleteRegistration(event.id, registration.userId);
+      this.registrations.update((items) => items.filter((item) => item.userId !== registration.userId));
+    } catch (error) {
+      this.statusMessage.set(this.errorMessage(error));
+    }
   }
 
   private errorMessage(error: unknown): string {

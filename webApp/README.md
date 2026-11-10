@@ -1,239 +1,241 @@
-# FFCH Puntuación — Web App (Angular)
+# Guía de uso — FFCH Puntuación
 
-Aplicación web que reemplaza `FFCH_Puntuacion/FFCH - Puntuacion.xlsx`: lleva el registro semanal de
-asistencia/pago de los jugadores, calcula sus puntos y TDP, arma equipos balanceados y genera el texto
-de convocatoria para WhatsApp. Corre 100% en el navegador (sin servidor) y se publica gratis en GitHub Pages.
+Esta aplicación reemplaza el Excel de puntuación de la FFCH. Aquí puedes consultar la tabla de posiciones,
+tu TDP, la asistencia de cada fecha, los equipos armados para el próximo partido e inscribirte a los eventos
+de la liga (Pre Temporada, Galas, Team Building).
 
-## Desarrollo local
+## Acceso
 
-```bash
-cd webApp
-npm install
-npm start        # http://localhost:4200
-npm test         # unit tests (Vitest)
-npm run build    # build de producción en dist/webApp/browser
-```
+### Crear una cuenta
 
-## Arquitectura
+1. En la pantalla de inicio elige **Crear cuenta**.
+2. Escribe tu nombre, tu correo y una contraseña de al menos 8 caracteres.
+3. Después de crearla, inicia sesión con **Iniciar sesión**.
 
-- **Angular 22**, componentes standalone, rutas con `withHashLocation()` (necesario para que las rutas
-  funcionen en GitHub Pages, que no soporta rewrites del lado del servidor).
-- **Base de datos local: [Dexie.js](https://dexie.org/) sobre IndexedDB** — caché/motor de consultas en
-  el navegador; los datos "reales" viven en Firestore (ver abajo).
-- **Cuentas: Firebase Authentication** — credenciales verificadas del lado del servidor de Firebase,
-  nunca expuestas al cliente.
-- **Datos compartidos: Firestore** — un documento (`data/ffch-puntuacion`) con jugadores, registros
-  semanales, TDP y configuración de temporada, más una colección `users` con el perfil (nombre/rol/estado)
-  de cada cuenta. Reglas de seguridad ([`firestore.rules`](./firestore.rules)) controlan quién puede leer/
-  escribir cada uno. Ver [DEPLOY.md](./DEPLOY.md) sección 0 para crear el proyecto Firebase.
+Un administrador puede **vincular tu cuenta con tu jugador** del roster. Así, cuando te inscribas a un
+evento, la app usa tu jugador automáticamente.
 
-### Servicios principales (`src/app/core/services`)
+### ¿Olvidaste tu contraseña?
 
-| Servicio | Responsabilidad |
+Elige **Olvidé mi contraseña** y escribe tu correo. Te llegará un enlace para elegir una contraseña nueva.
+Si no ves el correo, revisa la carpeta de spam.
+
+### Mi cuenta
+
+Haz clic en tu nombre (arriba a la derecha) para ver tus datos y **cambiar tu contraseña**. Si un
+administrador te dio una contraseña temporal, la app te pedirá cambiarla antes de continuar.
+
+## ¿Qué puede hacer cada usuario?
+
+| | Jugador (usuario) | Administrador |
+|---|---|---|
+| Ver Dashboard, Roster, TDP, Captura Semanal, Equipos y Ayuda | ✅ | ✅ |
+| Inscribirse a un evento habilitado | ✅ (solo como su propio jugador) | ✅ (también a nombre de otros) |
+| Editar jugadores, asistencia, TDP y equipos | — | ✅ |
+| Convocatoria, Ajustes y Usuarios | — | ✅ |
+
+## Páginas
+
+### Dashboard
+
+- **Tabla de posiciones:** jugadores activos ordenados por **Puntos**, con su **TDP %** y su **Rating**.
+  El color del número de posición indica el lugar: verde del 1 al 12, amarillo del 13 al 16 y rojo del 17
+  en adelante.
+- **Anuncios:** avisos de la liga. Puedes minimizarlos con **Minimizar ▲** y volver a abrirlos con
+  **Mostrar ▼**.
+- **Evento:** cuando hay un evento abierto aparece un aviso con la fecha, el lugar y la fecha límite, y un
+  botón **Inscribirme** (o **Ver mi inscripción ✓** si ya te inscribiste).
+
+### Roster
+
+Lista de jugadores: nombre (Galáctico), apodo, número de WhatsApp, si está activo, si es **Socio Fundador**
+y si fue **sede la temporada anterior**. Solo los administradores pueden editarla.
+
+### TDP
+
+El **TDP** es un bono por antigüedad y participación que multiplica tus puntos. Elige un **Año** para ver
+qué jugadores participaron en cada categoría (Año, Pre Temporada, Galas, Partido del Pavo, Anfitrión Gala,
+Team Building) y el TDP resultante de cada uno. Abajo se muestran los **pesos** de cada categoría.
+
+Si te inscribiste a un evento y marcaste **Asistiré**, tu participación aparece en el TDP aunque un
+administrador todavía no la haya aplicado.
+
+### Captura Semanal
+
+Asistencia de cada fecha de partido (los jueves). Elige la fecha en la lista para ver, por jugador:
+
+| Columna | Significado |
 |---|---|
-| `DataStoreService` | Wrapper de Dexie/IndexedDB; caché local y export/import completo. |
-| `ScoringService` | Reproduce las fórmulas de `FFCH_Puntuacion/formulas.txt` (`Pts`, `PtosFecha`, `TDP`, `Puntos`) y las reglas de tarjetas de `reglamento.md`. |
-| `RemoteSyncService` | Pull/push del documento `data/ffch-puntuacion` en Firestore, con control de concurrencia optimista. |
-| `AuthService` | Login/registro/roles sobre Firebase Authentication + Firestore. |
-| `TeamBalancerService` | Arma 2 equipos balanceados por promedio de Puntos ("snake draft"). |
-| `MessageTemplateService` | Rellena plantillas `{{VAR}}` como `convocatoria.md`. |
-| `CsvImportService` | Migración única desde los CSV exportados del Excel original. |
-| `EventService` | Eventos (Pre Temporada / Galas / Team Building), evento habilitado e inscripciones en Firestore; aplica asistencias al TDP. |
-| `EventReportService` | Cupos y validación de opciones de eventos, reporte CSV, resumen para WhatsApp y contenido del correo de confirmación. |
+| RSVP | Confirmó asistencia en la convocatoria. |
+| Jugó | Llegó y jugó. |
+| Sede | Puso la cancha esa fecha. |
+| Pago | Pagó su parte de la renta (aplica de abril a septiembre). |
+| Tarde | Llegó 5 minutos tarde o más. |
+| Cupo ExPat | Un jugador ExPat tiene cupo para jugar esa fecha (no cambia los puntos). |
 
-### Mapeo de fórmulas del Excel original
+### Equipos
 
-Ver [`FFCH_Puntuacion/README.md`](../FFCH_Puntuacion/README.md) para el detalle completo de cómo se
-reconstruyeron las fórmulas del Excel (`Pts`, `PtosFecha`, `TDP`, `Puntos`, pesos TDP) y las decisiones
-tomadas para los casos ambiguos (PtsTemporadaAnterior, peso de Team Building, tarjetas por tardanza).
+Muestra los equipos armados para el próximo partido, los suplentes, el último ganador y los equipos
+anteriores. Todos los usuarios ven los mismos equipos en cuanto un administrador los arma.
 
-## Primeros pasos como administrador
+Cómo se arman los equipos:
 
-1. Entra a **Ajustes** y, si es la primera vez, usa "Importar desde los CSV originales" para poblar el
-   roster y el historial desde los archivos en `FFCH_Puntuacion/`.
-2. Usa **TDP** para registrar, por categoría y año, las participaciones y ajustar los pesos de la fórmula.
-3. Usa **Captura Semanal** cada fecha para marcar RSVP/Jugó/Sede/Pago/Tarde por jugador.
-4. Usa **Equipos** para armar los 2 equipos balanceados y **Convocatoria** para generar el texto a copiar
-   a WhatsApp.
-5. Cuando termines de editar, usa "⬆ Guardar cambios en Firestore" en **Ajustes** para que los demás
-   dispositivos puedan sincronizar los cambios.
+1. El administrador marca a los jugadores confirmados. Si hay más de 12, juegan los 12 con mayor TDP y el
+   resto queda como suplente.
+2. Los jugadores se reparten uno por uno, del rating más alto al más bajo, y cada uno va al equipo con
+   menos rating acumulado. Así los dos equipos quedan lo más parejos posible.
+3. Se respetan las **restricciones** ("estos dos jugadores no pueden ir en el mismo equipo"). Solo los
+   administradores las ven y las editan.
+
+El **rating** (1 a 10) refleja el nivel para armar equipos. Al principio se calcula a partir de los Puntos.
+Después de cada partido, el administrador marca el equipo ganador: cada jugador del equipo ganador sube
+1 punto de rating y cada jugador del perdedor baja 1, sin salir del rango 1–10.
+
+### Eventos e inscripción
+
+Cuando un administrador habilita un evento, aparece en el menú con su nombre y en el Dashboard.
+
+1. Abre el evento. Verás la fecha, el lugar (con enlace al mapa si hay uno), la descripción y la fecha
+   límite de inscripción.
+2. Si tu cuenta está vinculada a tu jugador, se usa automáticamente. Si no, elige tu jugador en la lista.
+3. Marca **Asistiré** si vas a ir y contesta las opciones (por ejemplo, qué vas a llevar). Algunas opciones
+   son obligatorias y otras tienen cupo limitado.
+4. Presiona **Enviar inscripción**.
+
+Ten en cuenta:
+
+- **Una vez enviada, tu inscripción no se puede modificar.** Si te equivocaste, pide a un administrador que
+  la reabra.
+- Recibirás un **correo de confirmación** con los detalles del evento y tus respuestas.
+- Después de la fecha límite ya no es posible inscribirse.
+- En la misma página puedes ver la lista de asistentes y lo que lleva cada uno. Los nombres marcados como
+  "(invitado)" son personas sin cuenta que agregó un administrador.
+- Asistir a Pre Temporada, Galas o Team Building cuenta para tu **TDP** en esa categoría y año.
+
+## Cómo se calculan los puntos
+
+Cada fecha te da puntos según si confirmaste (RSVP), si jugaste y si fuiste sede:
+
+| RSVP | Jugó | Sede | Puntos de la fecha |
+|---|---|---|---|
+| Sí | Sí | Sí | 5 |
+| Sí | Sí | No | 3 |
+| Sí | No | Sí | 1 |
+| Sí | No | No | -3 |
+| No | Sí | Sí | -1 |
+| No | Sí | No | -2 |
+| No | No | Sí | 7 |
+| No | No | No | 0 |
+
+**Tarjetas** (según el reglamento):
+
+- 1ª llegada tarde en la temporada: **Tarjeta Amarilla**, solo es una advertencia.
+- 2ª llegada tarde o más: **Tarjeta Roja**, pierdes los puntos de esa fecha.
+- No pagar la renta: **Tarjeta Roja**, pierdes los puntos de esa fecha.
+
+**Puntos totales** = (1 + TDP) × (suma de los puntos de todas las fechas + 7 si fuiste sede la temporada
+anterior).
+
+El detalle completo de las fórmulas está en la sección **FFCH Puntuación**, más abajo en esta página.
+
+## Guía para administradores
+
+### Rutina de cada fecha
+
+1. **Antes de editar:** en **Ajustes**, presiona **⬇ Sincronizar desde Firestore** para trabajar sobre la
+   versión más reciente.
+2. **Convocatoria:** elige la fecha anterior para contar las tarjetas, completa fecha, hora, lugar, temporada
+   y número de fecha, presiona **Generar** y luego **Copiar** para pegarlo en WhatsApp.
+3. **Equipos:** marca a los jugadores confirmados y presiona **Armar equipos**. Usa **Copiar texto para
+   WhatsApp** para compartir la alineación.
+4. **Captura Semanal:** después del partido, elige o crea la fecha (**Nueva fecha**) y marca RSVP, Jugó, Sede,
+   Pago y Tarde por jugador. Cada casilla se guarda al marcarla.
+5. **Resultado:** en **Equipos**, presiona **🟧 Equipo A ganó** o **🔵 Equipo B ganó** para actualizar los
+   ratings.
+6. **Al terminar:** en **Ajustes**, presiona **⬆ Guardar cambios en Firestore** para que todos vean los
+   cambios.
 
 ### ¿Cuándo hay que usar "⬆ Guardar cambios en Firestore"?
 
-| Acción | Dónde se guarda | ¿Requiere el botón? |
-|---|---|---|
-| Crear/editar evento ("Guardar evento") | Firestore, al instante | No |
-| Habilitar/deshabilitar evento | Firestore, al instante | No |
-| Vincular cuenta ↔ jugador (Usuarios) | Firestore, al instante | No |
-| Inscripción de un usuario o de un admin a nombre de un jugador | Firestore, al instante | No |
-| Aplicar asistencias de eventos al TDP | Se sube a Firestore automáticamente cuando un admin abre TDP, se inscribe o usa "Aplicar asistencias al TDP" | No |
-| Ediciones manuales en TDP (casillas, pesos), Roster, Captura Semanal | Solo en IndexedDB del navegador | **Sí** |
+Algunos cambios se comparten al instante; otros se quedan solo en tu navegador hasta que presionas el botón.
 
-> "Guardar cambios" sube la copia local completa y reemplaza la de Firestore. Antes de editar TDP/Roster/Captura,
-> usa "⬇ Sincronizar desde Firestore" para no pisar cambios más recientes (por ejemplo, asistencias ya aplicadas).
-> Sincronizar reemplaza la copia local, así que primero guarda cualquier cambio local pendiente.
+| Acción | ¿Se comparte al instante? |
+|---|---|
+| Crear, editar, habilitar o deshabilitar un evento | Sí |
+| Inscripciones (propias o a nombre de un jugador) | Sí |
+| Vincular una cuenta con un jugador, cambiar roles (Usuarios) | Sí |
+| Aplicar asistencias de eventos al TDP | Sí |
+| Armar equipos, marcar el ganador, restricciones (Equipos) | Sí (los ratings también) |
+| Roster, Captura Semanal, casillas y pesos de TDP | **No: usa "⬆ Guardar cambios en Firestore"** |
 
-## Matriz de roles
+> **Importante:** "⬆ Guardar cambios en Firestore" reemplaza los datos compartidos con la copia de tu navegador.
+> Sincroniza antes de editar para no borrar cambios de otro administrador. "⬇ Sincronizar desde Firestore"
+> reemplaza tu copia local, así que guarda primero cualquier cambio pendiente.
 
-La app distingue dos tipos de acceso:
+### Eventos (Ajustes → Eventos)
 
-| Rol | Acceso | Puede editar datos |
-|---|---|---:|
-| Usuario autenticado no admin | Dashboard, Roster, TDP, Captura Semanal, Equipos, Evento (si hay uno habilitado), Ayuda y Cuenta | Solo su propia inscripción a eventos |
-| Administrador | Todas las páginas | Sí |
+- **Crear un evento:** elige la categoría (Pre Temporada, Galas o Team Building) y escribe título, descripción,
+  fecha y lugar. Opcionalmente agrega un **enlace del lugar** (por ejemplo, Google Maps; debe empezar con
+  `https://`) y una **fecha límite de inscripción**. Solo hay un evento por categoría y año.
+- **Opciones:** "Asistiré" siempre está incluida. Con **+ Agregar opción** puedes sumar preguntas de tipo
+  **Sí / No**, **Lista** (valores separados por coma, por ejemplo "Postre, Ensalada") o **Texto libre**. Cada
+  opción puede ser **Obligatoria** y tener un **Cupo** (por ejemplo, solo 2 personas llevan asador).
+- **Habilitar:** solo un evento puede estar habilitado a la vez. Con "Ninguno", la página del evento se oculta
+  para todos.
+- **Eventos pasados:** se archivan solos. **Duplicar al próximo año** copia el evento con la fecha un año
+  después para que solo ajustes los detalles.
+- **Inscripciones:** ver quién se inscribió, **Reabrir** una inscripción (el usuario puede volver a
+  inscribirse), **Aplicar asistencias al TDP**, **Descargar CSV** (se abre en Excel) y **Copiar resumen
+  WhatsApp**.
+- **Inscribir a un jugador:** puedes inscribir a cualquier jugador que no tenga inscripción, aunque ya haya
+  pasado la fecha límite. Si el jugador tiene cuenta vinculada, recibe el correo de confirmación.
+- **Agregar invitado:** para personas que van a asistir pero no tienen cuenta ni están en el roster (por
+  ejemplo, familiares o amigos). Escribe su nombre en la página del evento (debajo de la lista de asistentes) o
+  en Ajustes → Inscripciones. Aparecen en la lista como "(invitado)", no cuentan para el TDP ni para los cupos y
+  puedes quitarlos con **Quitar**.
+- Las asistencias se suman al TDP automáticamente cuando un administrador abre la página TDP, se inscribe o
+  usa **Aplicar asistencias al TDP**. Después de eso puedes desmarcar en TDP a quien no llegó.
 
-Enrutamiento real:
+### Usuarios
 
-- `authGuard` protege `/`, `/cuenta`, `/roster`, `/tdp`, `/captura`, `/equipos` y `/ayuda`.
-- `activeEventGuard` protege `/evento` (requiere sesión y un evento habilitado; si no, redirige a `/`).
-- `adminGuard` protege `/convocatoria`, `/ajustes` y `/usuarios`.
-- La lectura del documento compartido (`data/ffch-puntuacion`) está permitida a cualquier usuario autenticado
-  (regla de Firestore); solo administradores pueden escribirlo.
+- **Jugador:** vincula cada cuenta con su jugador del roster. Un jugador solo puede estar vinculado a una
+  cuenta, y el usuario solo podrá inscribirse a eventos como ese jugador.
+- **Rol:** convierte una cuenta en administrador o quítale el rol. Siempre debe quedar al menos un
+  administrador.
+- **Estado:** deshabilita una cuenta para impedir que inicie sesión. No puedes deshabilitar tu propia cuenta.
+- **Enviar correo de restablecimiento:** le llega al usuario un enlace para elegir una contraseña nueva.
 
-## Auto-sync en primer login
+### Equipos: restricciones
 
-Cuando un usuario autenticado entra por primera vez y la base local de IndexedDB está vacía, la app intenta
-hacer un pull del documento compartido `data/ffch-puntuacion` desde Firestore.
+Una restricción indica que dos jugadores no pueden ir en el mismo equipo (por ejemplo, "Jose no puede ir con
+Andrew"). Elige a los dos jugadores y presiona **Guardar restricción**; usa **Eliminar** cuando ya no aplique.
+Las restricciones solo las ven los administradores.
 
-Esto tiene dos ventajas importantes:
+### Ajustes: respaldo e importación
 
-- un usuario nuevo puede ver los datos sin tener que navegar manualmente a Ajustes;
-- un administrador no necesita recrear la base local en cada navegador nuevo.
+- **Descargar JSON:** guarda una copia de seguridad de todos los datos en tu computadora.
+- **Cargar JSON:** reemplaza los datos de tu navegador con una copia de seguridad. Luego usa "⬆ Guardar cambios
+  en Firestore" si quieres compartirlos.
+- **Importar desde los CSV originales:** carga inicial desde el Excel original (solo se usa una vez). Reemplaza
+  todos los datos de tu navegador.
 
-La lógica es segura por diseño:
+## Preguntas frecuentes
 
-- si ya hay datos en la base local, no se sobreescribe automáticamente;
-- si la base local está vacía, se rellena desde Firestore;
-- los cambios explícitos y los pushes siguen siendo solo para administradores.
+**La tabla de posiciones no muestra los últimos cambios.**
+La app guarda una copia de los datos en tu navegador la primera vez que entras y no la actualiza sola después.
+Si eres administrador, usa **⬇ Sincronizar desde Firestore** en Ajustes. Si no, borra los datos del sitio en tu
+navegador y vuelve a iniciar sesión.
 
-En otras palabras, la sincronización automática es una carga inicial de arranque, no un refresh silencioso en cada login.
+**No me puedo inscribir al evento.**
+Revisa que la fecha límite no haya pasado y que no tengas ya una inscripción. Si tu jugador ya tiene una
+inscripción hecha desde otra cuenta, contacta a un administrador.
 
-## Eventos e inscripción (`/evento`)
+**Me equivoqué en mi inscripción.**
+Pide a un administrador que la reabra; después podrás inscribirte de nuevo.
 
-Los eventos **Pre Temporada**, **Galas** y **Team Building** corresponden 1:1 a las categorías TDP del mismo
-nombre (`pretemporada`, `gala`, `teamBuilding`).
+**No me llegó el correo de confirmación.**
+Revisa la carpeta de spam. Tu inscripción queda guardada aunque el correo no llegue; puedes verla en la
+página del evento.
 
-**Administración (Ajustes → Eventos):**
-
-- Crear/editar un evento: categoría, título, descripción, fecha (`datetime-local`), lugar, **enlace del lugar**
-  opcional (Google Maps u otra página; solo URLs `http(s)://`, se muestra como link en la página del evento, el
-  banner del Dashboard, el correo y el resumen de WhatsApp) y **fecha límite de
-  inscripción** opcional (después de esa hora los usuarios ya no pueden inscribirse; también lo validan las reglas
-  de Firestore vía `deadlineMs`). El id del evento es `<categoría>-<año de la fecha>`, así que hay un evento por
-  categoría y año.
-- Opciones: "Asistiré" siempre está incluida; se pueden agregar opciones extra de tipo **Sí / No**, **Lista**
-  (valores separados por coma) o **Texto libre** (ej. "Llevo bebidas", "Platillo: Postre, Ensalada"). Cada opción
-  puede ser **Obligatoria** y tener un **Cupo**: máximo de asistentes que pueden marcar un Sí / No, o elegir cada
-  valor de una Lista (ej. solo 2 personas llevan asador). El cupo se valida en el cliente al enviar.
-- Habilitar un evento (radio): solo uno puede estar habilitado a la vez. Con "Ninguno", la página y el enlace del
-  menú quedan ocultos para todos.
-- **Archivo:** los eventos con fecha pasada se agrupan en "Eventos pasados" (el habilitado siempre se queda arriba).
-  Como cada edición anual es un documento distinto, el historial de inscripciones por año se conserva.
-  **Duplicar al próximo año** copia título, descripción, lugar y opciones al editor con la fecha +1 año, para
-  ajustar los detalles y guardar.
-- Ver inscripciones de cualquier evento, **Reabrir** (borra la inscripción para que el usuario se pueda inscribir de
-  nuevo), **Aplicar asistencias al TDP**, **Descargar CSV** (compatible con Excel) y **Copiar resumen WhatsApp**
-  (asistentes, qué lleva cada uno y totales por opción).
-- **Inscribir a un jugador:** un admin puede inscribir a cualquier jugador sin inscripción (ignora la fecha límite).
-  Si el jugador está vinculado a una cuenta se usa ese uid (el usuario la ve como suya); si no, el id es
-  `player-<playerId>`. Queda marcada con `registeredBy`.
-
-**Dashboard:** mientras hay un evento habilitado se muestra un banner con título, fecha, lugar y fecha límite, y un
-botón "Inscribirme" / "Ver mi inscripción ✓". Los anuncios de `public/anuncios.md` siguen siendo para avisos
-generales; evita duplicar ahí el evento habilitado.
-
-**Usuarios:** el enlace con el título del evento aparece en el menú solo mientras hay un evento habilitado. Si la
-cuenta está vinculada a un jugador (ver abajo) se usa ese jugador automáticamente; si no, el usuario lo elige (los
-que ya tienen inscripción no aparecen). Marca "Asistiré" y contesta las opciones.
-Al enviar, la inscripción se guarda directo en Firestore y la página queda en solo lectura para ese usuario. La
-página también muestra la lista de asistentes y lo que cada uno lleva.
-
-**Correo de confirmación:** al inscribirse (o cuando un admin inscribe a un jugador vinculado a una cuenta) se envía
-un correo al usuario con el evento, fecha, lugar (con enlace), descripción, su respuesta de asistencia y las opciones
-elegidas. Se envía escribiendo en la colección `mail`, que procesa la Cloud Function `sendQueuedMail`
-([`../functions/index.js`](../functions/index.js), configuración en [DEPLOY.md](./DEPLOY.md) sección 0.1). Si
-falla, la inscripción igual queda guardada.
-
-**Vincular cuentas con jugadores (Usuarios):** en la columna **Jugador** un administrador asigna a cada cuenta su
-jugador del roster (`users/{uid}.playerId`). Un jugador solo puede estar vinculado a una cuenta. Los usuarios no
-pueden cambiar su propio `playerId`, y las reglas de Firestore solo les permiten inscribirse como su jugador
-vinculado (las cuentas sin vincular aún pueden elegir).
-
-**Integración con TDP:** asistir marca la categoría del evento en el año de la fecha del evento
-(`<playerId>-<categoría>-<año>`, `participated: true`). Como los no-admins no pueden escribir el documento compartido
-`data/ffch-puntuacion`, el flujo es:
-
-1. La inscripción se guarda en `events/{eventId}/registrations/{uid}`.
-2. Mientras no se haya aplicado, la página TDP la muestra a todos como participación (sin escribir nada).
-3. Cuando un administrador se inscribe, abre la página TDP o usa "Aplicar asistencias al TDP", la app aplica
-   automáticamente las asistencias pendientes al documento compartido en Firestore (sobre la última versión remota,
-   sin pisar cambios locales sin guardar), las guarda en IndexedDB y marca cada inscripción con `appliedToTdp: true`.
-   A partir de ahí el TDP es la fuente de verdad, así que un admin puede desmarcar a alguien que no llegó.
-
-**Firestore:**
-
-| Ruta | Lectura | Escritura |
-|---|---|---|
-| `meta/activeEvent` (`{ eventId }`) | usuarios autenticados | admins |
-| `events/{eventId}` | usuarios autenticados | admins |
-| `events/{eventId}/registrations/{uid}` | usuarios autenticados | crear: el propio usuario solo si el evento está habilitado y antes de la fecha límite, o cualquier admin; actualizar: admins (solo `appliedToTdp`); borrar: admins |
-| `mail/{id}` | nadie (solo la Cloud Function) | crear: un usuario solo a su propio correo; admins a cualquiera |
-
-> Después de actualizar a esta versión hay que volver a publicar [`firestore.rules`](./firestore.rules) en la
-> consola de Firebase (ver [DEPLOY.md](./DEPLOY.md)).
-
-## Cómo crea equipos el balanceador
-
-El servicio `TeamBalancerService` sigue una estrategia greedy de tipo "snake draft":
-
-1. Ordena los jugadores seleccionados por `rating` descendente.
-2. Recorre la lista en ese orden.
-3. Si el equipo A tiene menos total acumulado que el equipo B, el jugador va a A; si no, va a B.
-4. Acumula el `total` de cada equipo con el valor del `rating` de cada jugador.
-5. Devuelve dos equipos con `total` y `promedio` calculados sobre esos ratings.
-
-El algoritmo es intencionalmente simple y rápido: mantiene los equipos lo más parejos posible sin intentar una búsqueda combinatoria completa.
-
-### Cálculo del rating inicial a partir de puntos
-
-Cuando un jugador no tiene un `rating` persistido aún, se genera desde `puntos`:
-
-- se toma el máximo `puntos` del conjunto activo,
-- se normaliza cada jugador a escala `1..10`,
-- se redondea para mantener un entero,
-- y el valor final queda acotado entre `1` y `10`.
-
-Esto hace que el primer balanceo sea razonable sin necesidad de tener un histórico previo.
-
-### Efecto del último partido
-
-Cuando el administrador marca quién ganó el último partido en la pantalla del balanceador:
-
-- jugadores del equipo ganador: `rating = rating + 1`
-- jugadores del equipo perdedor: `rating = rating - 1`
-- el resultado queda clavado entre `1` y `10`
-
-Esto hace que el rating evolucione con el resultado de las partidas y que los equipos siguientes se generen con una tendencia histórica ligera pero persistente.
-
-## Restricciones de equipo
-
-El balanceador también acepta restricciones de "no pueden ir juntos". Cada restricción es un par de jugadores y se valida por `playerId` interno; el `WA number` solo se usa como etiqueta de visualización.
-
-Ejemplos de restricciones soportadas:
-
-- Jose no puede ir en el mismo equipo que Andrew.
-- Jonathan no puede ir en el mismo equipo que Michael G.
-
-En la pantalla de `Equipos`, el administrador puede:
-
-- seleccionar dos jugadores desde el dropdown,
-- guardar la restricción,
-- ver la lista de restricciones activas,
-- eliminar las que ya no aplique.
-
-Las restricciones se guardan en IndexedDB, bajo la clave `team-balancer:restrictions`, para que sean administrables desde la app y no dependan de un archivo estático de config.
-
-## Publicación en GitHub Pages
-
-Ver [DEPLOY.md](./DEPLOY.md) para el checklist completo (única vez) y cómo funciona el despliegue
-automático vía GitHub Actions en cada cambio a `webApp/`.
+**No veo Convocatoria, Ajustes ni Usuarios en el menú.**
+Esas páginas son solo para administradores.

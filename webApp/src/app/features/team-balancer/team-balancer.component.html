@@ -2,6 +2,10 @@
 
 <p>Selecciona los jugadores confirmados (RSVP) para la próxima fecha.</p>
 
+@if (statusMessage()) {
+  <p class="status">{{ statusMessage() }}</p>
+}
+
 <ul class="candidates">
   @for (candidate of candidates(); track candidate.playerId) {
     <li>
@@ -27,9 +31,9 @@
   <button type="button" (click)="applyLastGameResult('teamB')">🔵 Equipo B ganó</button>
 }
 
+@if (isAdmin) {
 <h2>Restricciones de equipo</h2>
 <p>Se usa el ID interno del jugador para la regla. El WA number es solo una etiqueta visible.</p>
-@if (isAdmin) {
 <div>
   <label>
     Jugador A:

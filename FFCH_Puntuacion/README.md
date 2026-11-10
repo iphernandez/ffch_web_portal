@@ -12,7 +12,7 @@ guarda las fuentes originales (para referencia) y los datos versionados que usa 
 - `formulas.txt` — fórmulas originales de Excel documentadas manualmente (base de la migración).
 - `data/ffch-puntuacion.json` — **snapshot histórico**, ya no es la fuente de verdad. Hasta 2026-09-20
   la app leía/escribía este archivo vía GitHub API; ahora los datos compartidos viven en un documento
-  Firestore (`data/ffch-puntuacion`, ver [`../webApp/README.md`](../webApp/README.md)) y este archivo
+  Firestore (`data/ffch-puntuacion`, ver [`../README.md`](../README.md)) y este archivo
   no se sincroniza automáticamente con nada. Se conserva solo como respaldo/referencia del último
   estado conocido antes de la migración; para cargarlo en la app usa Ajustes → "Cargar JSON" y luego
   "⬆ Guardar cambios en Firestore".

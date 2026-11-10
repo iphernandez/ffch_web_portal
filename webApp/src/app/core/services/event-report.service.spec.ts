@@ -61,6 +61,11 @@ describe('EventReportService', () => {
     expect(text).toContain('- Platillo: Postre 1/1, Ensalada 0/1');
   });
 
+  it('marks guests in the WhatsApp summary', () => {
+    const guest = registration({ userId: 'guest-1', playerId: '', playerName: 'Ana', guest: true });
+    expect(service.toWhatsapp(event, [guest])).toContain('1. Ana (invitado)');
+  });
+
   it('builds a confirmation email with details, answers and escaped HTML', () => {
     const email = service.confirmationEmail(
       { ...event, locationUrl: 'https://maps.app.goo.gl/abc' },

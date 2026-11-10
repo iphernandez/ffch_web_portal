@@ -24,7 +24,7 @@ export interface PlayerScoreSummary {
 /**
  * Reproduces, cell for cell, the formulas documented in FFCH_Puntuacion/formulas.txt
  * and verified against the "Convocado/Jugo/Sede -> Pts/Casta" legend table in
- * "FFCH - Puntuacion - TDP.csv". See webApp/README.md for the mapping.
+ * "FFCH - Puntuacion - TDP.csv". See FFCH_Puntuacion/README.md for the mapping.
  */
 @Injectable({ providedIn: 'root' })
 export class ScoringService {

@@ -67,6 +67,25 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Team-balancer incompatibility restrictions; private, so admins only.
+    match /meta/teamBalancer {
+      allow get: if isAdmin();
+      allow create, update: if isAdmin() &&
+        request.resource.data.keys().hasOnly(['restrictions', 'updatedAt', 'migratedAt']) &&
+        request.resource.data.get('restrictions', []) is list;
+      allow delete: if false;
+    }
+
+    // Pending teams, last results and winner; any signed-in user can see them, only admins write.
+    match /meta/teamBalancerTeams {
+      allow get: if isSignedIn();
+      allow create, update: if isAdmin() &&
+        request.resource.data.keys().hasOnly(['pendingTeams', 'history', 'lastWinner', 'updatedAt', 'migratedAt']) &&
+        request.resource.data.get('history', []) is list &&
+        request.resource.data.get('history', []).size() <= 10;
+      allow delete: if false;
+    }
+
     // Outbox for the `sendQueuedMail` Cloud Function (it reads/updates via the Admin SDK).
     // Users may only email themselves; admins may email any account (registrations on someone's behalf).
     match /mail/{mailId} {

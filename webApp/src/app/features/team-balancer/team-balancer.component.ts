@@ -1,29 +1,25 @@
-import { Component, signal } from '@angular/core';
+import { Component, DestroyRef, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Unsubscribe } from 'firebase/firestore';
 import { Player } from '../../core/models/player.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DataStoreService } from '../../core/services/data-store.service';
 import { ScoringService } from '../../core/services/scoring.service';
 import { TeamBalancerService, BalancedTeams, BalancerPlayer, TeamRestriction } from '../../core/services/team-balancer.service';
+import {
+  StoredPendingTeams,
+  TeamBalancerStateService,
+  TeamHistoryEntry,
+  TeamWinner,
+  TeamsState
+} from '../../core/services/team-balancer-state.service';
 
-const PENDING_TEAMS_KEY = 'team-balancer:pendingTeams';
 /** Max players that take the field; change this value to adjust the cap. */
 const MAX_PLAYERS_PER_GAME = 12;
 
 interface Candidate extends BalancerPlayer {
   selected: boolean;
   tdp: number;
-}
-
-interface TeamHistoryEntry {
-  date: string;
-  winner: 'teamA' | 'teamB';
-  teamA: string[];
-  teamB: string[];
-}
-
-interface StoredPendingTeams extends BalancedTeams {
-  substitutes?: BalancerPlayer[];
 }
 
 @Component({
@@ -39,19 +35,31 @@ export class TeamBalancerComponent {
   readonly maxPlayers = MAX_PLAYERS_PER_GAME;
   readonly copyText = signal('');
   readonly pastTeams = signal<TeamHistoryEntry[]>([]);
-  readonly lastWinner = signal<'teamA' | 'teamB' | null>(null);
+  readonly lastWinner = signal<TeamWinner | null>(null);
   readonly restrictions = signal<TeamRestriction[]>([]);
   readonly restrictionAId = signal('');
   readonly restrictionBId = signal('');
+  readonly statusMessage = signal('');
 
   private playerMap = new Map<string, Player>();
+  private readonly unsubscribers: Unsubscribe[] = [];
+  private destroyed = false;
+  /** Latest result date seen; undefined until the first snapshot so loading doesn't trigger a rating refresh. */
+  private seenResultDate: string | null | undefined;
+  private ownResultDate: string | null = null;
 
   constructor(
     private readonly store: DataStoreService,
     private readonly scoring: ScoringService,
     private readonly balancer: TeamBalancerService,
-    private readonly auth: AuthService
+    private readonly auth: AuthService,
+    private readonly sharedState: TeamBalancerStateService,
+    destroyRef: DestroyRef
   ) {
+    destroyRef.onDestroy(() => {
+      this.destroyed = true;
+      this.unsubscribers.forEach((unsubscribe) => unsubscribe());
+    });
     void this.load();
   }
 
@@ -60,15 +68,11 @@ export class TeamBalancerComponent {
   }
 
   async load(): Promise<void> {
-    const [allPlayers, weeklyRecords, tdpHistory, seasonConfig, storedWinner, storedHistory, storedRestrictions, storedPending] = await Promise.all([
+    const [allPlayers, weeklyRecords, tdpHistory, seasonConfig] = await Promise.all([
       this.store.players.toArray(),
       this.store.weeklyRecords.toArray(),
       this.store.tdpHistory.toArray(),
-      this.store.getSeasonConfig(),
-      this.store.getSetting('team-balancer:lastWinner'),
-      this.store.getSetting('team-balancer:history'),
-      this.store.getSetting('team-balancer:restrictions'),
-      this.store.getSetting(PENDING_TEAMS_KEY)
+      this.store.getSeasonConfig()
     ]);
 
     this.playerMap = new Map(allPlayers.map((player) => [player.id, player]));
@@ -110,26 +114,64 @@ export class TeamBalancerComponent {
       };
     });
 
-    const pending = storedPending ? (JSON.parse(storedPending) as StoredPendingTeams) : null;
+    this.candidates.set(candidates);
+    if (this.destroyed) return;
+
+    const onError = (error: unknown) => {
+      console.error('No se pudo sincronizar el balanceador de equipos:', error);
+      this.statusMessage.set('No se pudo sincronizar el balanceador con Firestore.');
+    };
+    this.unsubscribers.push(this.sharedState.watchTeams((state) => this.applyTeams(state), onError, this.isAdmin));
+    // Restrictions are admin-only in firestore.rules.
+    if (this.isAdmin) {
+      this.unsubscribers.push(this.sharedState.watchRestrictions((list) => this.restrictions.set(list), onError));
+    }
+  }
+
+  private applyTeams(state: TeamsState): void {
+    const hadPending = this.teams() !== null;
+    const pending = state.pendingTeams;
     if (pending) {
       const substitutes = pending.substitutes ?? [];
       const pendingIds = new Set(
         [...pending.teamA.players, ...pending.teamB.players, ...substitutes].map((p) => p.playerId)
       );
-      for (const candidate of candidates) {
-        candidate.selected = pendingIds.has(candidate.playerId);
-      }
+      this.candidates.update((list) => list.map((c) => ({ ...c, selected: pendingIds.has(c.playerId) })));
       this.teams.set(pending);
       this.substitutes.set(substitutes);
       this.copyText.set(this.formatConvocados(pending, substitutes));
+    } else {
+      if (hadPending) this.candidates.update((list) => list.map((c) => ({ ...c, selected: false })));
+      this.teams.set(null);
+      this.substitutes.set([]);
+      this.copyText.set('');
     }
 
-    this.candidates.set(candidates);
+    this.lastWinner.set(state.lastWinner);
+    this.pastTeams.set(state.history);
 
-    const winner = storedWinner === 'teamA' || storedWinner === 'teamB' ? storedWinner : null;
-    this.lastWinner.set(winner);
-    this.pastTeams.set(storedHistory ? (JSON.parse(storedHistory) as TeamHistoryEntry[]) : []);
-    this.restrictions.set(storedRestrictions ? (JSON.parse(storedRestrictions) as TeamRestriction[]) : []);
+    const latest = state.history[0]?.date ?? null;
+    if (this.seenResultDate !== undefined && latest && latest !== this.seenResultDate && latest !== this.ownResultDate) {
+      void this.refreshRatings();
+    }
+    this.seenResultDate = latest;
+  }
+
+  /** Another admin recorded a result: bring their rating changes from the shared data into this device. */
+  private async refreshRatings(): Promise<void> {
+    try {
+      const changed = await this.sharedState.pullRatings();
+      if (!changed.size) return;
+      for (const [playerId, rating] of changed) {
+        const player = this.playerMap.get(playerId);
+        if (player) this.playerMap.set(playerId, { ...player, rating });
+      }
+      this.candidates.update((list) =>
+        list.map((c) => (changed.has(c.playerId) ? { ...c, rating: changed.get(c.playerId)! } : c))
+      );
+    } catch (error) {
+      console.error('No se pudieron actualizar los ratings desde Firestore:', error);
+    }
   }
 
   async buildTeams(): Promise<void> {
@@ -147,7 +189,17 @@ export class TeamBalancerComponent {
     this.copyText.set(this.formatConvocados(teams, subs));
 
     const pending: StoredPendingTeams = { ...teams, substitutes: subs };
-    await this.store.setSetting(PENDING_TEAMS_KEY, JSON.stringify(pending));
+    await this.saveShared(() => this.sharedState.setPendingTeams(pending));
+  }
+
+  private async saveShared(write: () => Promise<void>): Promise<void> {
+    try {
+      await write();
+      this.statusMessage.set('');
+    } catch (error) {
+      console.error('No se pudo guardar el balanceador de equipos:', error);
+      this.statusMessage.set('No se pudo guardar en Firestore. Revisa tu conexión e intenta de nuevo.');
+    }
   }
 
   async addRestriction(): Promise<void> {
@@ -169,21 +221,22 @@ export class TeamBalancerComponent {
       return;
     }
 
-    const next = [...this.restrictions(), { id: crypto.randomUUID(), playerAId, playerBId }];
-    this.restrictions.set(next);
-    await this.store.setSetting('team-balancer:restrictions', JSON.stringify(next));
+    const restriction: TeamRestriction = { id: crypto.randomUUID(), playerAId, playerBId };
+    this.restrictions.set([...this.restrictions(), restriction]);
+    await this.saveShared(() => this.sharedState.addRestriction(restriction));
     this.restrictionAId.set('');
     this.restrictionBId.set('');
   }
 
   async deleteRestriction(restrictionId: string): Promise<void> {
     if (!this.isAdmin) return;
-    const next = this.restrictions().filter((restriction) => restriction.id !== restrictionId);
-    this.restrictions.set(next);
-    await this.store.setSetting('team-balancer:restrictions', JSON.stringify(next));
+    const restriction = this.restrictions().find((item) => item.id === restrictionId);
+    if (!restriction) return;
+    this.restrictions.set(this.restrictions().filter((item) => item.id !== restrictionId));
+    await this.saveShared(() => this.sharedState.removeRestriction(restriction));
   }
 
-  async applyLastGameResult(winner: 'teamA' | 'teamB'): Promise<void> {
+  async applyLastGameResult(winner: TeamWinner): Promise<void> {
     if (!this.isAdmin) return;
     const currentTeams = this.teams();
     if (!currentTeams) return;
@@ -220,21 +273,32 @@ export class TeamBalancerComponent {
       Array.from(this.playerMap.values()).map((player) => ({ ...player, rating: player.rating ?? 1 }))
     );
 
-    this.lastWinner.set(winner);
-    await this.store.setSetting('team-balancer:lastWinner', winner);
-
     const historyEntry: TeamHistoryEntry = {
       date: new Date().toISOString(),
       winner,
       teamA: teamAIds,
       teamB: teamBIds
     };
+    this.ownResultDate = historyEntry.date;
 
-    const nextHistory = [historyEntry, ...this.pastTeams()];
-    this.pastTeams.set(nextHistory.slice(0, 10));
-    await this.store.setSetting('team-balancer:history', JSON.stringify(this.pastTeams()));
+    // Ratings go first so other devices find them in the shared data when the new result reaches them.
+    let ratingsError: string | null = null;
+    try {
+      await this.sharedState.pushRatings(new Map(nextCandidates.map((candidate) => [candidate.playerId, candidate.rating])));
+    } catch (error) {
+      console.error('No se pudieron guardar los ratings en Firestore:', error);
+      ratingsError = error instanceof Error ? error.message : 'Error desconocido.';
+    }
 
-    await this.store.clearSetting(PENDING_TEAMS_KEY);
+    this.lastWinner.set(winner);
+    this.pastTeams.set([historyEntry, ...this.pastTeams()].slice(0, 10));
+    await this.saveShared(() => this.sharedState.recordResult(historyEntry));
+    if (ratingsError) {
+      this.statusMessage.set(
+        `Resultado guardado, pero los ratings quedaron solo en este dispositivo (${ratingsError}). Usa "Guardar en Firestore" en Ajustes.`
+      );
+    }
+
     this.teams.set(null);
     this.substitutes.set([]);
     this.copyText.set('');

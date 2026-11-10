@@ -12,6 +12,7 @@ import {
   EventOption,
   EventRegistration,
   FfchEvent,
+  GUEST_NAME_MAX_LENGTH,
   eventCategoryLabel,
   eventId,
   formatEventDate,
@@ -102,6 +103,8 @@ export class SettingsComponent {
   behalfPlayerId = '';
   behalfAttending = true;
   behalfAnswers: EventAnswers = {};
+  guestName = '';
+  readonly guestNameMaxLength = GUEST_NAME_MAX_LENGTH;
 
   draft: EventDraft = emptyDraft();
   /** Id of the event loaded into the editor, to warn before overwriting a different existing one. */
@@ -314,6 +317,26 @@ export class SettingsComponent {
     }
   }
 
+  async addGuest(): Promise<void> {
+    const event = this.registrationsEvent();
+    const admin = this.auth.currentUser();
+    if (!event || !admin) return;
+    try {
+      const guest = await this.events.addGuest(event.id, this.guestName, admin.name, this.registrations());
+      this.registrations.update((items) =>
+        [...items, guest].sort((a, b) => a.playerName.localeCompare(b.playerName))
+      );
+      this.guestName = '';
+      this.eventMessage.set(`Invitado ${guest.playerName} agregado.`);
+    } catch (error) {
+      this.eventMessage.set(this.errorMessage(error));
+    }
+  }
+
+  registrationName(registration: EventRegistration): string {
+    return this.report.attendeeName(registration);
+  }
+
   downloadCsv(): void {
     const event = this.registrationsEvent();
     if (!event) return;
@@ -352,7 +375,10 @@ export class SettingsComponent {
   async deleteRegistration(registration: EventRegistration): Promise<void> {
     const id = this.registrationsEventId();
     if (!id) return;
-    if (!confirm(`¿Eliminar la inscripción de ${registration.playerName}? Podrá volver a inscribirse.`)) return;
+    const prompt = registration.guest
+      ? `¿Quitar al invitado ${registration.playerName} de la lista?`
+      : `¿Eliminar la inscripción de ${registration.playerName}? Podrá volver a inscribirse.`;
+    if (!confirm(prompt)) return;
     try {
       await this.events.deleteRegistration(id, registration.userId);
       this.registrations.update((items) => items.filter((item) => item.userId !== registration.userId));

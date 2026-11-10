@@ -17,7 +17,7 @@ import { DataStoreService } from './data-store.service';
 import { RemoteSyncService } from './remote-sync.service';
 import { EventReportService } from './event-report.service';
 import { environment } from '../../../environments/environment';
-import { EventRegistration, FfchEvent, eventYear } from '../models/event.model';
+import { EventRegistration, FfchEvent, GUEST_NAME_MAX_LENGTH, eventYear } from '../models/event.model';
 import { TdpHistoryEntry } from '../models/tdp.model';
 
 const EVENTS_COLLECTION = 'events';
@@ -107,6 +107,30 @@ export class EventService {
       doc(firestore, EVENTS_COLLECTION, eventId, REGISTRATIONS_SUBCOLLECTION, registration.userId),
       registration
     );
+  }
+
+  /** Admin-only: adds a named attendee with no account or roster player; Firestore rules allow admins to create any id. */
+  async addGuest(eventId: string, name: string, addedBy: string, existing: EventRegistration[]): Promise<EventRegistration> {
+    const playerName = name.trim().replace(/\s+/g, ' ').slice(0, GUEST_NAME_MAX_LENGTH);
+    if (!playerName) throw new Error('Escribe el nombre del invitado.');
+    const lower = playerName.toLocaleLowerCase('es');
+    if (existing.some((registration) => registration.playerName.toLocaleLowerCase('es') === lower)) {
+      throw new Error(`Ya hay alguien en la lista con el nombre "${playerName}".`);
+    }
+
+    const registration: EventRegistration = {
+      userId: `guest-${crypto.randomUUID()}`,
+      userName: 'Invitado',
+      playerId: '',
+      playerName,
+      attending: true,
+      answers: {},
+      submittedAt: new Date().toISOString(),
+      registeredBy: addedBy,
+      guest: true
+    };
+    await this.submitRegistration(eventId, registration);
+    return registration;
   }
 
   /**

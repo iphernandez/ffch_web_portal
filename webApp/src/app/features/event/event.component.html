@@ -87,14 +87,24 @@
               @for (option of ev.options; track option.id) {
                 <th>{{ option.label }}</th>
               }
+              @if (isAdmin) {
+                <th></th>
+              }
             </tr>
           </thead>
           <tbody>
             @for (registration of attendees(); track registration.userId) {
               <tr>
-                <td>{{ registration.playerName }}</td>
+                <td>{{ attendeeName(registration) }}</td>
                 @for (option of ev.options; track option.id) {
-                  <td>{{ answerText(registration, option) }}</td>
+                  <td>{{ registration.guest ? '—' : answerText(registration, option) }}</td>
+                }
+                @if (isAdmin) {
+                  <td>
+                    @if (registration.guest) {
+                      <button type="button" (click)="removeGuest(registration)">Quitar</button>
+                    }
+                  </td>
                 }
               </tr>
             }
@@ -103,6 +113,24 @@
       </div>
     } @else {
       <p class="hint">Todavía nadie ha confirmado asistencia.</p>
+    }
+
+    @if (isAdmin) {
+      <form class="event-form guest-form" (ngSubmit)="addGuest()">
+        <label>
+          Agregar invitado (sin cuenta ni jugador)
+          <input
+            type="text"
+            name="guestName"
+            placeholder="Nombre"
+            [maxlength]="guestNameMaxLength"
+            [(ngModel)]="guestName"
+            required
+          />
+        </label>
+        <button type="submit" [disabled]="!guestName.trim()">Agregar</button>
+        <p class="hint">Solo aparece en la lista de asistentes; no cuenta para el TDP ni para los cupos.</p>
+      </form>
     }
   </section>
 }

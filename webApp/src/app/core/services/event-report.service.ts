@@ -95,6 +95,10 @@ export class EventReportService {
     return typeof value === 'string' && value ? value : '—';
   }
 
+  attendeeName(registration: EventRegistration): string {
+    return registration.guest ? `${registration.playerName} (invitado)` : registration.playerName;
+  }
+
   toCsv(event: FfchEvent, registrations: EventRegistration[]): string {
     const header = ['Jugador', 'Usuario', 'Asiste', ...event.options.map((option) => option.label), 'Fecha inscripción', 'Registrado por'];
     const rows = registrations.map((registration) => [
@@ -125,7 +129,7 @@ export class EventReportService {
           return typeof value === 'string' && value ? `${option.label}: ${value}` : '';
         })
         .filter(Boolean);
-      lines.push(`${index + 1}. ${registration.playerName}${details.length ? ' — ' + details.join(', ') : ''}`);
+      lines.push(`${index + 1}. ${this.attendeeName(registration)}${details.length ? ' — ' + details.join(', ') : ''}`);
     });
 
     if (absent.length) {

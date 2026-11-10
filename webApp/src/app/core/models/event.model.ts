@@ -56,7 +56,11 @@ export interface EventRegistration {
   appliedToTdp?: boolean;
   /** Name of the admin who registered on the player's behalf. */
   registeredBy?: string;
+  /** Admin-added attendee who is neither a user nor a roster player (playerId is ''); never counts for TDP. */
+  guest?: boolean;
 }
+
+export const GUEST_NAME_MAX_LENGTH = 80;
 
 export type EventAnswers = Record<string, boolean | string>;
 

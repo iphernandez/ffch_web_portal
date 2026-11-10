@@ -162,14 +162,16 @@
         <tbody>
           @for (registration of registrations(); track registration.userId) {
             <tr>
-              <td>{{ registration.playerName }}</td>
+              <td>{{ registrationName(registration) }}</td>
               <td>{{ registration.userName }}{{ registration.registeredBy ? ' (por ' + registration.registeredBy + ')' : '' }}</td>
               <td>{{ registration.attending ? 'Sí' : 'No' }}</td>
               @for (option of event.options; track option.id) {
-                <td>{{ registration.attending ? registrationAnswer(registration, option) : '—' }}</td>
+                <td>{{ registration.attending && !registration.guest ? registrationAnswer(registration, option) : '—' }}</td>
               }
-              <td>{{ registration.appliedToTdp ? 'Aplicado' : registration.attending ? 'Pendiente' : '—' }}</td>
-              <td><button type="button" (click)="deleteRegistration(registration)">Reabrir</button></td>
+              <td>{{ registration.guest ? '—' : registration.appliedToTdp ? 'Aplicado' : registration.attending ? 'Pendiente' : '—' }}</td>
+              <td>
+                <button type="button" (click)="deleteRegistration(registration)">{{ registration.guest ? 'Quitar' : 'Reabrir' }}</button>
+              </td>
             </tr>
           }
         </tbody>
@@ -199,6 +201,19 @@
         <app-event-answers [options]="event.options" [answers]="behalfAnswers" [usage]="usage()" />
       }
       <button type="submit" [disabled]="!behalfPlayerId">Inscribir</button>
+    </form>
+
+    <h4>Agregar invitado</h4>
+    <p class="hint">
+      Para personas que asistirán pero no tienen cuenta ni están en el roster. Solo aparecen en la lista de asistentes;
+      no cuentan para el TDP ni para los cupos.
+    </p>
+    <form class="event-editor" (ngSubmit)="addGuest()">
+      <label>
+        Nombre
+        <input type="text" name="guestName" [maxlength]="guestNameMaxLength" [(ngModel)]="guestName" required />
+      </label>
+      <button type="submit" [disabled]="!guestName.trim()">Agregar</button>
     </form>
   }
 
