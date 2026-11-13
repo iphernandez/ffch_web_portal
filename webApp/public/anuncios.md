@@ -27,3 +27,4 @@ Donde se entregarán los premios a lo “mejor” del fútbol de este año 2026.
 - 📅 12 de diciembre del 2026
 - 🕡 6:30 p.m.
 - 📍 [607 NE Lenox St Hillsboro, OR 97124](https://maps.app.goo.gl/CsFSM9i6HXSSQ3J36)
+- 💵 Cuota: _*$35*_
