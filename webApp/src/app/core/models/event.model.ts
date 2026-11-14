@@ -52,6 +52,7 @@ export interface EventRegistration {
   attending: boolean;
   answers: EventAnswers;
   submittedAt: string;
+  paid?: boolean;
   /** Set by an admin client once the attendance was written into the shared TDP history. */
   appliedToTdp?: boolean;
   /** Name of the admin who registered on the player's behalf. */

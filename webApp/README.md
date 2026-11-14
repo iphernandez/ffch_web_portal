@@ -110,6 +110,7 @@ Ten en cuenta:
 - Después de la fecha límite ya no es posible inscribirse.
 - En la misma página puedes ver la lista de asistentes y lo que lleva cada uno. Los nombres marcados como
   "(invitado)" son personas sin cuenta que agregó un administrador.
+- La columna **Pagó** muestra si un administrador registró el pago de la cuota del evento.
 - Asistir a Pre Temporada, Galas o Team Building cuenta para tu **TDP** en esa categoría y año.
 
 ## Cómo se calculan los puntos
@@ -163,6 +164,7 @@ Algunos cambios se comparten al instante; otros se quedan solo en tu navegador h
 |---|---|
 | Crear, editar, habilitar o deshabilitar un evento | Sí |
 | Inscripciones (propias o a nombre de un jugador) | Sí |
+| Registrar el pago de la cuota de un evento | Sí |
 | Vincular una cuenta con un jugador, cambiar roles (Usuarios) | Sí |
 | Aplicar asistencias de eventos al TDP | Sí |
 | Armar equipos, marcar el ganador, restricciones (Equipos) | Sí (los ratings también) |
@@ -193,6 +195,8 @@ Algunos cambios se comparten al instante; otros se quedan solo en tu navegador h
   ejemplo, familiares o amigos). Escribe su nombre en la página del evento (debajo de la lista de asistentes) o
   en Ajustes → Inscripciones. Aparecen en la lista como "(invitado)", no cuentan para el TDP ni para los cupos y
   puedes quitarlos con **Quitar**.
+- **Registrar pagos:** marca o desmarca **Pagó** en la lista de asistentes de la página del evento, también
+  para invitados. Todos pueden consultar el estado; solo los administradores pueden cambiarlo.
 - Las asistencias se suman al TDP automáticamente cuando un administrador abre la página TDP, se inscribe o
   usa **Aplicar asistencias al TDP**. Después de eso puedes desmarcar en TDP a quien no llegó.
 

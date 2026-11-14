@@ -110,6 +110,7 @@ service cloud.firestore {
         allow create: if request.resource.data.userId == userId &&
           request.resource.data.attending is bool &&
           !('appliedToTdp' in request.resource.data) &&
+          !('paid' in request.resource.data) &&
           (isAdmin() ||
             (isSelf(userId) &&
               !('registeredBy' in request.resource.data) &&
@@ -117,7 +118,9 @@ service cloud.firestore {
               get(/databases/$(database)/documents/meta/activeEvent).data.eventId == eventId &&
               beforeDeadline(eventId)));
         allow update: if isAdmin() &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['appliedToTdp']);
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['appliedToTdp', 'paid']) &&
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['paid']) ||
+            request.resource.data.paid is bool);
         allow delete: if isAdmin();
       }
     }

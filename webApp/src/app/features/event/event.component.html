@@ -84,6 +84,7 @@
           <thead>
             <tr>
               <th>Jugador</th>
+              <th>Pagó</th>
               @for (option of ev.options; track option.id) {
                 <th>{{ option.label }}</th>
               }
@@ -96,6 +97,15 @@
             @for (registration of attendees(); track registration.userId) {
               <tr>
                 <td>{{ attendeeName(registration) }}</td>
+                <td>
+                  <input
+                    type="checkbox"
+                    [checked]="registration.paid ?? false"
+                    [disabled]="!isAdmin || updatingPayments().has(registration.userId)"
+                    [attr.aria-label]="'Pago de ' + attendeeName(registration)"
+                    (change)="setPaid(registration, $any($event.target))"
+                  />
+                </td>
                 @for (option of ev.options; track option.id) {
                   <td>{{ registration.guest ? '—' : answerText(registration, option) }}</td>
                 }

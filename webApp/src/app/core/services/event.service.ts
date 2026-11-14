@@ -9,6 +9,7 @@ import {
   getDocs,
   onSnapshot,
   setDoc,
+  updateDoc,
   writeBatch
 } from 'firebase/firestore';
 import { firestore } from './firebase';
@@ -150,6 +151,10 @@ export class EventService {
   /** Admin-only: deleting a registration lets that user submit again (e.g. they made a mistake). */
   async deleteRegistration(eventId: string, userId: string): Promise<void> {
     await deleteDoc(doc(firestore, EVENTS_COLLECTION, eventId, REGISTRATIONS_SUBCOLLECTION, userId));
+  }
+
+  async setRegistrationPaid(eventId: string, userId: string, paid: boolean): Promise<void> {
+    await updateDoc(doc(firestore, EVENTS_COLLECTION, eventId, REGISTRATIONS_SUBCOLLECTION, userId), { paid });
   }
 
   /** TDP entries implied by "attending" registrations that an admin hasn't folded into the shared data yet. */

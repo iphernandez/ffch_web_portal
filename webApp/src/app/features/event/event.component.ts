@@ -35,6 +35,7 @@ export class EventComponent {
   readonly myRegistration = signal<EventRegistration | null>(null);
   readonly submitting = signal(false);
   readonly statusMessage = signal('');
+  readonly updatingPayments = signal<Set<string>>(new Set());
 
   readonly availablePlayers = computed(() => {
     const claimed = new Set(this.registrations().map((registration) => registration.playerId));
@@ -182,6 +183,28 @@ export class EventComponent {
 
   attendeeName(registration: EventRegistration): string {
     return this.report.attendeeName(registration);
+  }
+
+  async setPaid(registration: EventRegistration, input: HTMLInputElement): Promise<void> {
+    const paid = input.checked;
+    input.checked = registration.paid ?? false;
+    const event = this.event();
+    if (!event || !this.isAdmin || this.updatingPayments().has(registration.userId)) return;
+    this.updatingPayments.update((ids) => new Set(ids).add(registration.userId));
+    try {
+      await this.events.setRegistrationPaid(event.id, registration.userId, paid);
+      this.registrations.update((items) =>
+        items.map((item) => item.userId === registration.userId ? { ...item, paid } : item)
+      );
+    } catch (error) {
+      this.statusMessage.set(this.errorMessage(error));
+    } finally {
+      this.updatingPayments.update((ids) => {
+        const next = new Set(ids);
+        next.delete(registration.userId);
+        return next;
+      });
+    }
   }
 
   async addGuest(): Promise<void> {
