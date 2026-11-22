@@ -1,0 +1,318 @@
+{
+    "$help": "https://aka.ms/terminal-documentation",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "actions": 
+    [
+        {
+            "command": 
+            {
+                "action": "copy",
+                "singleLine": false
+            },
+            "id": "User.copy.644BA8F2"
+        },
+        {
+            "command": "paste",
+            "id": "User.paste"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "split": "auto",
+                "splitMode": "duplicate"
+            },
+            "id": "User.splitPane.A6751878"
+        },
+        {
+            "command": "find",
+            "id": "User.find"
+        }
+    ],
+    "copyFormatting": "none",
+    "copyOnSelect": false,
+    "defaultProfile": "{b036c6bb-f227-5131-b9d8-3cb24b3e7892}",
+    "keybindings": 
+    [
+        {
+            "id": "User.copy.644BA8F2",
+            "keys": "ctrl+c"
+        },
+        {
+            "id": "User.paste",
+            "keys": "ctrl+v"
+        },
+        {
+            "id": "User.find",
+            "keys": "ctrl+shift+f"
+        },
+        {
+            "id": "User.splitPane.A6751878",
+            "keys": "alt+shift+d"
+        }
+    ],
+    "launchMode": "maximized",
+    "newTabMenu": 
+    [
+        {
+            "type": "remainingProfiles"
+        }
+    ],
+    "profiles": 
+    {
+        "defaults": {},
+        "list": 
+        [
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\huma_ecuador.jpg",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniformToFill",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "colorScheme": "Campbell",
+                "commandline": "C:\\Program Files\\Git\\git-cmd.exe --no-cd --command=usr/bin/bash.exe -l -i",
+                "elevate": true,
+                "font": 
+                {
+                    "size": 14
+                },
+                "guid": "{b036c6bb-f227-5131-b9d8-3cb24b3e7892}",
+                "icon": "C:/Program Files/Git/mingw64/share/git/git-for-windows.ico",
+                "name": "Dev Git Bash",
+                "opacity": 100,
+                "startingDirectory": "C:\\Development\\CCEPnPTools",
+                "tabTitle": "Dev Git Bash"
+            },
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\fef_sello.jpg",
+                "backgroundImageAlignment": "top",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniform",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "colorScheme": "Campbell Powershell",
+                "commandline": "%ProgramFiles%\\PowerShell\\7\\pwsh.exe",
+                "elevate": true,
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "hidden": false,
+                "name": "Dev PS7 Windows",
+                "startingDirectory": "C:\\Development\\CCEPnPTools",
+                "tabTitle": "Dev 7 PowerShell"
+            },
+            {
+                "altGrAliasing": true,
+                "antialiasingMode": "grayscale",
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\fef_sello.jpg",
+                "backgroundImageAlignment": "top",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniform",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "closeOnExit": "automatic",
+                "colorScheme": "Tango Dark",
+                "commandline": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                "cursorShape": "bar",
+                "elevate": true,
+                "font": 
+                {
+                    "face": "Cascadia Mono",
+                    "size": 12
+                },
+                "guid": "{23f3855e-1b64-40bf-b0da-db294e801e7d}",
+                "hidden": false,
+                "historySize": 9001,
+                "icon": null,
+                "name": "Dev PS5 Windows",
+                "padding": "8, 8, 8, 8",
+                "snapOnInput": true,
+                "startingDirectory": "C:\\Development\\CCEPnPTools",
+                "tabTitle": "Dev 5 PowerShell",
+                "useAcrylic": false
+            },
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\fef_sello.jpg",
+                "backgroundImageAlignment": "top",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniform",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "colorScheme": "One Half Light",
+                "commandline": "cmd.exe",
+                "elevate": true,
+                "guid": "{75ec84f6-af1d-5022-8629-dbd31c488777}",
+                "hidden": false,
+                "name": "Dev Command Prompt",
+                "startingDirectory": "C:\\Development\\CCEPnPTools",
+                "tabTitle": "Dev Command Prompt"
+            },
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\huma_ecuador.jpg",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniformToFill",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "guid": "{2c4de342-38b7-51cf-b940-2309a097f518}",
+                "hidden": false,
+                "icon": "ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png",
+                "name": "Ubuntu",
+                "source": "Windows.Terminal.Wsl"
+            },
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\huma_ecuador.jpg",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniformToFill",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "guid": "{fd13a4a1-82f8-5152-ac9e-c80d09f37b9b}",
+                "hidden": false,
+                "name": "podman-machine-default",
+                "source": "Microsoft.WSL"
+            },
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\fef_sello.jpg",
+                "backgroundImageAlignment": "top",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniform",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+                "hidden": true,
+                "name": "Azure Cloud Shell",
+                "source": "Windows.Terminal.Azure"
+            },
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\fef_sello.jpg",
+                "backgroundImageAlignment": "top",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniform",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "hidden": true,
+                "name": "Command Prompt"
+            },
+            {
+                "guid": "{f4097449-6e1c-5486-8bff-85fd484b1eaf}",
+                "hidden": true,
+                "name": "Developer Command Prompt for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{0d14e743-dc7e-5676-ac3f-12664d403812}",
+                "hidden": true,
+                "name": "Developer PowerShell for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{51855cb2-8cce-5362-8f54-464b92b32386}",
+                "hidden": true,
+                "icon": "ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png",
+                "name": "Ubuntu",
+                "source": "CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc"
+            },
+            {
+                "guid": "{16208362-94fc-5b1f-a491-5b2624d5ab56}",
+                "hidden": true,
+                "name": "Visual Studio Debug Console",
+                "source": "VSDebugConsole"
+            },
+            {
+                "guid": "{c2bc0754-9e8c-5868-8b66-78763c2b3b8b}",
+                "hidden": true,
+                "name": "Developer Command Prompt for VS 2022 (2)",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{e9928f01-02b6-5ffa-a63d-e83e527a1658}",
+                "hidden": true,
+                "name": "Developer PowerShell for VS 2022 (2)",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\fef_sello.jpg",
+                "backgroundImageAlignment": "top",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniform",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "hidden": true,
+                "name": "PowerShell",
+                "source": "Windows.Terminal.PowershellCore"
+            },
+            {
+                "backgroundImage": "C:\\Users\\iphernan\\OneDrive - Intel Corporation\\Pictures\\Personal\\fef_sello.jpg",
+                "backgroundImageAlignment": "top",
+                "backgroundImageOpacity": 0.1,
+                "backgroundImageStretchMode": "uniform",
+                "bellStyle": 
+                [
+                    "audible",
+                    "taskbar"
+                ],
+                "commandline": "powershell.exe",
+                "guid": "{c993c0b6-0023-5562-a928-3ea11eb283ce}",
+                "hidden": true,
+                "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
+                "name": "Windows PowerShell",
+                "startingDirectory": "%USERPROFILE%"
+            }
+        ]
+    },
+    "schemes": 
+    [
+        {
+            "background": "#300A24",
+            "black": "#171421",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#08458F",
+            "brightCyan": "#2C9FB3",
+            "brightGreen": "#26A269",
+            "brightPurple": "#A347BA",
+            "brightRed": "#C01C28",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#A2734C",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#FFFFFF",
+            "green": "#26A269",
+            "name": "Ubuntu-22.04-ColorScheme",
+            "purple": "#881798",
+            "red": "#C21A23",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#A2734C"
+        }
+    ],
+    "theme": "dark",
+    "themes": [],
+    "windowingBehavior": "useAnyExisting"
+}
